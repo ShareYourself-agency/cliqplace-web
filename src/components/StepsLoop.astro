@@ -45,11 +45,12 @@ const n = steps.length;
     padding: clamp(3.5rem, 2.5rem + 3.5vw, 5.5rem) clamp(1.25rem, 0.5rem + 3.5vw, 4rem) clamp(3rem, 2rem + 3vw, 5rem);
     background: linear-gradient(180deg, #386041 0%, #22392b 55%, #111c17 100%);
   }
-  .steps__pipes { position: absolute; left: 50%; top: 58%; width: 125%; max-width: none; height: auto; transform: translate(-50%, -50%); z-index: -1; opacity: 0.16; filter: saturate(0.35) brightness(1.1); pointer-events: none; }
+  .steps__pipes { position: absolute; left: 50%; top: 58%; width: 125%; max-width: none; height: auto; transform: translate(-50%, -50%); z-index: -1; opacity: 0.16; filter: saturate(0.35) brightness(1.1); pointer-events: none; mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 55%, transparent 100%); -webkit-mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 55%, transparent 100%); }
   @media (max-width: 767.98px) { .steps__pipes { width: 260%; top: 62%; } }
   .steps__title { margin-bottom: clamp(2.5rem, 2rem + 2vw, 3.75rem); }
 
-  .steps__viewport { overflow: hidden; }
+  .steps__viewport { overflow: hidden; padding: 1.75rem 1rem; margin: -1.75rem -1rem; }
+  @media (min-width: 768px) { .steps__viewport { overflow: visible; } }
   .steps__list { display: flex; transition: transform 0.6s var(--ease-out); }
   .step { flex: 0 0 100%; padding-inline: 0.25rem; }
   .step__marker { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.75rem; }

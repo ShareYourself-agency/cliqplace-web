@@ -9,7 +9,7 @@ import Reviews from '../components/Reviews.astro';
 import FinalCta from '../components/FinalCta.astro';
 import Faq from '../components/Faq.astro';
 import { faqMain } from '../data/faq';
-import heroDevices from '../assets/img/portal-hero-devices.png';
+import PortalMockup from '../components/PortalMockup.astro';
 import online from '../assets/img/prodavejte-vstupenky-online.png';
 
 const steps = [
@@ -26,7 +26,7 @@ const steps = [
   <PageHero visualClass="pt-hero-visual">
     <Fragment slot="title">Místo, kde se návštěvník dostane ke své <em>vstupence.</em></Fragment>
     <Fragment slot="lead">Prodávejte vstupenky online jednoduše a bez zbytečných překážek. Přes mytickets.vip nebo white-label řešení pod vaší vlastní značkou.</Fragment>
-    <Image slot="visual" src={heroDevices} alt="Prodejní portál MyTickets na notebooku a v mobilu" widths={[640, 1000, 1400, 1800]} sizes="(min-width: 1100px) 1000px, 92vw" loading="eager" fetchpriority="high" />
+    <div slot="visual" class="pt-mock" role="img" aria-label="Ukázka prodejního portálu MyTickets: výběr akce na notebooku a vstupenka s QR kódem v mobilu"><PortalMockup /></div>
   </PageHero>
 
   <div class="sheet">
@@ -85,11 +85,7 @@ const steps = [
 </Base>
 
 <style>
-  :global(.pt-hero-visual) img {
-    width: min(100%, 62.5rem); margin-inline: auto;
-    mask-image: radial-gradient(ellipse 70% 80% at 50% 50%, #000 55%, transparent 78%);
-    -webkit-mask-image: radial-gradient(ellipse 70% 80% at 50% 50%, #000 55%, transparent 78%);
-  }
+  :global(.pt-hero-visual) { margin-top: clamp(3.5rem, 2.5rem + 4vw, 6rem); padding-bottom: calc(var(--radius-xl) + 2rem); }
   .pt-data { background: radial-gradient(ellipse 70% 60% at 50% 100%, rgba(54,93,63,0.4), transparent 70%), #0b110f; }
   .scan { position: relative; width: min(100%, 32rem); overflow: hidden; border-radius: var(--radius); }
   .scan img { width: 100%; }

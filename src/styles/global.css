@@ -185,8 +185,8 @@ p { text-wrap: pretty; }
 .icon-tile img { width: 1.6rem; height: 1.6rem; }
 
 /* ---------- reveal on scroll ---------- */
-.js [data-reveal] { opacity: 0; translate: 0 32px; filter: blur(6px); transition: opacity 0.9s var(--ease-out), translate 0.9s var(--ease-out), filter 0.9s var(--ease-out); transition-delay: var(--d, 0s); }
-.js [data-reveal].is-in { opacity: 1; translate: none; filter: none; }
+.js [data-reveal] { opacity: 0; translate: 0 28px; transition: opacity 0.9s var(--ease-out), translate 0.9s var(--ease-out); transition-delay: var(--d, 0s); }
+.js [data-reveal].is-in { opacity: 1; translate: none; }
 
 /* ---------- logo marquee ---------- */
 .logos { padding-block: clamp(2.5rem, 2rem + 2vw, 3.5rem) clamp(3rem, 2rem + 3vw, 4.5rem); }
@@ -200,10 +200,9 @@ p { text-wrap: pretty; }
   display: flex; flex-shrink: 0; align-items: center; gap: var(--gap); padding-right: var(--gap);
   animation: marquee 40s linear infinite;
 }
-.marquee:hover .marquee__track { animation-play-state: paused; }
 .marquee__track li { display: flex; align-items: center; }
-.marquee__track img { height: calc(var(--h, 34) * var(--logo-scale, 0.8) * 1px); width: auto; opacity: 0.9; transition: opacity 0.3s, filter 0.3s; }
-.marquee__track img:hover { opacity: 1; filter: drop-shadow(0 0 10px rgba(199, 255, 156, 0.55)); }
+.marquee { pointer-events: none; }
+.marquee__track img { height: calc(var(--h, 34) * var(--logo-scale, 0.8) * 1px); width: auto; opacity: 0.9; }
 @media (min-width: 768px) { .marquee { --logo-scale: 1; } }
 @keyframes marquee { to { transform: translateX(-100%); } }
 
@@ -348,30 +347,28 @@ p { text-wrap: pretty; }
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor; mask-composite: exclude;
   opacity: 0; transition: opacity 0.5s;
-  animation: fx-spin 4s linear infinite;
 }
-.fx-neon:hover::after { opacity: 1; }
+.fx-neon:hover::after { opacity: 1; animation: fx-spin 4s linear infinite; }
 @keyframes fx-spin { to { --fx-angle: 360deg; } }
 
 /* cursor spotlight in dark sections */
 .fx-spot {
-  position: absolute; inset: 0; z-index: -1; pointer-events: none; opacity: 0; transition: opacity 0.6s;
-  background: radial-gradient(600px circle at var(--sx, 50%) var(--sy, 50%), rgba(141, 255, 107, 0.12), transparent 60%);
+  position: absolute; left: 0; top: 0; width: 1100px; height: 1100px; margin: -550px 0 0 -550px; z-index: -1; pointer-events: none;
+  opacity: 0; transition: opacity 0.6s; will-change: transform;
+  background: radial-gradient(circle closest-side, rgba(141, 255, 107, 0.12), transparent);
 }
 .fx-spot.is-on { opacity: 1; }
 
 /* grid slowly drifting in dark hero */
-.dark-shell::after { animation: fx-grid 30s linear infinite; }
-@keyframes fx-grid { to { background-position: center 72px; } }
 
 /* split headings – word by word */
 .fx-w { display: inline-block; white-space: pre; }
 .js .fx-split .fx-w {
-  opacity: 0; translate: 0 0.45em; filter: blur(10px);
-  transition: opacity 0.9s var(--ease-out), translate 0.9s var(--ease-out), filter 0.9s var(--ease-out);
+  opacity: 0; translate: 0 0.5em;
+  transition: opacity 0.8s var(--ease-out), translate 0.8s var(--ease-out);
   transition-delay: calc(var(--wi) * 55ms);
 }
-.js .fx-split.is-in .fx-w { opacity: 1; translate: none; filter: none; }
+.js .fx-split.is-in .fx-w { opacity: 1; translate: none; }
 
 /* stat glow when counting finishes */
 .fx-done { animation: fx-glow 1.4s ease-out; }
@@ -390,9 +387,9 @@ p { text-wrap: pretty; }
 
 
 @media (prefers-reduced-motion: reduce) {
-  .js .fx-split .fx-w { opacity: 1; translate: none; filter: none; }
+  .js .fx-split .fx-w { opacity: 1; translate: none; }
   .fx-tilt { transform: none !important; }
-  .dark-shell::after, .fx-float, .fx-neon::after { animation: none; }
+  .fx-float, .fx-neon::after { animation: none; }
 }
 
 /* bento cards (often with video): calmer hover – no blink flash, no glare, softer & slower sweep */
@@ -400,3 +397,6 @@ p { text-wrap: pretty; }
 .bcard > .fx-glare { display: none; }
 .bcard:hover > .fx-shine::before { animation-duration: 1.6s; opacity: 0.55; }
 .bcard .bcard__bg { backface-visibility: hidden; transform: translateZ(0); }
+
+/* performance: section-level containment keeps repaints local */
+.dark-shell, .around__box, .steps, .final-cta, .reviews { contain: paint; }

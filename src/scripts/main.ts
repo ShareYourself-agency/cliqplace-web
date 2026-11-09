@@ -242,7 +242,7 @@ function initSplit() {
 
 function initShine() {
   const strong = '.btn, .trio__card, .audience, .pillar, .faq__item, .how-card, .how-cta';
-  const soft = '.glass, .bcard, .review, .contact__card';
+  const soft = '.glass, .bcard, .review';
   const add = (el: Element, cls: string) => {
     if (el.querySelector(':scope > .fx-shine')) return;
     el.classList.add('fx-host');
@@ -307,11 +307,17 @@ function initSpotlight() {
     const spot = document.createElement('div');
     spot.className = 'fx-spot'; spot.setAttribute('aria-hidden', 'true');
     sec.prepend(spot);
+    let tx = 0, ty = 0, cx = 0, cy = 0, raf = 0;
+    const loop = () => {
+      cx += (tx - cx) * 0.15; cy += (ty - cy) * 0.15;
+      spot.style.transform = `translate3d(${cx.toFixed(1)}px, ${cy.toFixed(1)}px, 0)`;
+      raf = Math.abs(tx - cx) + Math.abs(ty - cy) > 0.5 ? requestAnimationFrame(loop) : 0;
+    };
     sec.addEventListener('pointermove', (e) => {
       const r = sec.getBoundingClientRect();
-      spot.style.setProperty('--sx', `${e.clientX - r.left}px`);
-      spot.style.setProperty('--sy', `${e.clientY - r.top}px`);
-      spot.classList.add('is-on');
+      tx = e.clientX - r.left; ty = e.clientY - r.top;
+      if (!spot.classList.contains('is-on')) { cx = tx; cy = ty; spot.classList.add('is-on'); }
+      if (!raf) raf = requestAnimationFrame(loop);
     });
     sec.addEventListener('pointerleave', () => spot.classList.remove('is-on'));
   });
@@ -363,7 +369,6 @@ function initFloat() {
 initSplit();
 initShine();
 initTilt();
-initMagnetic();
 initSpotlight();
 initHeroParallax();
 initFloat();

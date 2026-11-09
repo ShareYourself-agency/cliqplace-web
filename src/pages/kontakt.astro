@@ -136,7 +136,15 @@ import { site } from '../data/site';
     background: linear-gradient(160deg, rgba(43, 72, 52, 0.55), rgba(12, 20, 18, 0.35));
     border: 1px solid rgba(255,255,255,0.12);
     box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
-    backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  }
+  /* slow orbiting neon edge around the form card */
+  .contact__card { position: relative; isolation: isolate; }
+  .contact__card::before {
+    content: ''; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none;
+    background: conic-gradient(from var(--fx-angle), transparent 0deg, rgba(141,255,107,0.0) 60deg, rgba(141,255,107,0.75) 110deg, rgba(199,255,156,0.15) 160deg, transparent 220deg);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor; mask-composite: exclude;
+    animation: fx-spin 9s linear infinite;
   }
   .contact__title { max-width: 11ch; margin-bottom: 1.5rem; }
   .contact__lead { max-width: 28rem; color: rgba(255,255,255,0.9); }
@@ -158,8 +166,14 @@ import { site } from '../data/site';
     position: absolute; left: 0; top: 1.6rem; color: rgba(255,255,255,0.72); pointer-events: none;
     transform-origin: left top; transition: transform 0.2s var(--ease-out), color 0.2s;
   }
-  .field input:focus, .field textarea:focus { border-bottom-color: var(--c-lime); }
-  .field input:focus-visible, .field textarea:focus-visible { box-shadow: 0 1px 0 0 var(--c-lime); }
+  .field::after {
+    content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 2px; pointer-events: none;
+    background: linear-gradient(90deg, #5dff4a, var(--c-lime)); box-shadow: 0 0 10px rgba(93,255,74,0.6);
+    transform: scaleX(0); transform-origin: left; transition: transform 0.5s var(--ease-out);
+  }
+  .field:focus-within::after { transform: scaleX(1); }
+  .field textarea + label + * {}
+  .field:has(textarea)::after { bottom: 6px; }
   .field input:focus + label, .field input:not(:placeholder-shown) + label,
   .field textarea:focus + label, .field textarea:not(:placeholder-shown) + label { transform: translateY(-1.35rem) scale(0.8); color: var(--c-lime); }
   .field.is-invalid input, .field.is-invalid textarea { border-bottom-color: #ff9c9c; }
