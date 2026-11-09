@@ -241,17 +241,8 @@ function initSplit() {
 }
 
 function initShine() {
-  const strong = '.btn, .trio__card, .audience, .pillar, .faq__item, .how-card, .how-cta';
-  const soft = '.glass, .bcard, .review';
-  const add = (el: Element, cls: string) => {
-    if (el.querySelector(':scope > .fx-shine')) return;
-    el.classList.add('fx-host');
-    const s = document.createElement('span');
-    s.className = cls; s.setAttribute('aria-hidden', 'true');
-    el.appendChild(s);
-  };
-  document.querySelectorAll(strong).forEach((el) => add(el, 'fx-shine fx-shine--strong'));
-  document.querySelectorAll(soft).forEach((el) => add(el, 'fx-shine'));
+  // calm hover: soft lime edge glow (no white sweep)
+  document.querySelectorAll('.btn, .trio__card, .audience, .pillar, .faq__item, .how-card, .how-cta, .glass, .bcard, .review').forEach((el) => el.classList.add('fx-glow'));
   document.querySelectorAll('.glass, .bcard--cta, .final-cta__card, .hw-more, .pt-data').forEach((el) => el.classList.add('fx-neon'));
   document.querySelectorAll('.audience, .trio__card').forEach((el) => el.classList.add('fx-lift'));
 }

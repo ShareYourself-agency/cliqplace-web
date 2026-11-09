@@ -90,7 +90,10 @@ const steps = [
       <div class="container">
         <h2 class="h2 center pillars__title" id="pillars-title">Cliqplace. Jeden partner.<br /> Celý ticketing.</h2>
         <div class="pillars__stage">
-          <Image class="pillars__network" src={network} alt="" widths={[700, 1324]} sizes="(min-width: 1024px) 1324px, 100vw" loading="lazy" />
+          <div class="pillars__net" aria-hidden="true">
+            <Image class="pillars__network" src={network} alt="" widths={[700, 1324]} sizes="(min-width: 1024px) 1324px, 100vw" loading="lazy" />
+            <Image class="pillars__network pillars__pulse" src={network} alt="" widths={[700, 1324]} sizes="(min-width: 1024px) 1324px, 100vw" loading="lazy" />
+          </div>
           <ul role="list" class="pillars__grid">
             {pillars.map((p, i) => (
               <li class="pillar" data-reveal style={`--d:${i * 0.1}s; --r:${[-2.2, 1.6, 1.2][i]}deg`}>
@@ -277,12 +280,29 @@ const steps = [
   /* ---------------- pillars ---------------- */
   .pillars__title { margin-bottom: clamp(2.5rem, 1.5rem + 3vw, 4rem); }
   .pillars__stage { position: relative; }
+  .pillars__net { display: none; position: absolute; left: 50%; top: 52%; width: 112%; transform: translate(-50%, -50%); pointer-events: none; }
   .pillars__network {
-    display: none; position: absolute; left: 50%; top: 52%; width: 112%; max-width: none;
-    transform: translate(-50%, -50%); pointer-events: none;
+    display: block; width: 100%; max-width: none; height: auto; pointer-events: none;
     mask-image: linear-gradient(90deg, transparent 2%, #000 20%, #000 80%, transparent 98%);
     -webkit-mask-image: linear-gradient(90deg, transparent 2%, #000 20%, #000 80%, transparent 98%);
   }
+  /* a soft band of light slowly travelling through the pipes */
+  .pillars__pulse {
+    position: absolute; inset: 0;
+    filter: brightness(1.8) saturate(1.4) drop-shadow(0 0 10px rgba(93,255,74,0.6));
+    mix-blend-mode: screen; opacity: 1;
+    mask-image: linear-gradient(90deg, transparent 0%, #000 50%, transparent 100%), linear-gradient(90deg, transparent 2%, #000 20%, #000 80%, transparent 98%);
+    -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 50%, transparent 100%), linear-gradient(90deg, transparent 2%, #000 20%, #000 80%, transparent 98%);
+    mask-size: 30% 100%, 100% 100%; -webkit-mask-size: 30% 100%, 100% 100%;
+    mask-repeat: no-repeat; -webkit-mask-repeat: no-repeat;
+    mask-composite: intersect; -webkit-mask-composite: source-in;
+    animation: pipe-pulse 6.5s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+  }
+  @keyframes pipe-pulse {
+    0% { mask-position: -45% 0, 0 0; -webkit-mask-position: -45% 0, 0 0; }
+    100% { mask-position: 145% 0, 0 0; -webkit-mask-position: 145% 0, 0 0; }
+  }
+  @media (prefers-reduced-motion: reduce) { .pillars__pulse { display: none; } }
   .pillars__grid { position: relative; display: grid; gap: 1.25rem; max-width: 26rem; margin-inline: auto; }
   .pillar {
     display: flex; flex-direction: column; align-items: center; text-align: center;
@@ -299,7 +319,7 @@ const steps = [
   .pillar__text { color: var(--c-text); margin-bottom: 1.5rem; max-width: 30ch; }
   .pillar__btn { margin-top: auto; }
   @media (min-width: 900px) {
-    .pillars__network { display: block; }
+    .pillars__net { display: block; }
     .pillars__grid { grid-template-columns: repeat(3, minmax(0, 1fr)); max-width: 70rem; gap: clamp(2rem, 1rem + 3vw, 4.5rem); }
     .pillar { rotate: var(--r); }
     .pillar:nth-child(2) { margin-top: -0.5rem; }
