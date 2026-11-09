@@ -138,6 +138,33 @@ function initLoops() {
     }
     render();
     if (!progress && stage && 'ResizeObserver' in window) new ResizeObserver(() => render()).observe(stage);
+
+    // steps: driven by scroll position (1 → 4 while the pinned box is on screen)
+    if (root.hasAttribute('data-scroll-steps')) {
+      const wrap = root.closest('section') as HTMLElement;
+      const pinTop = () => parseFloat(getComputedStyle(wrap.querySelector('.container')!).top) || 0;
+      const progressOf = () => {
+        const r = wrap.getBoundingClientRect();
+        const travel = r.height - (root.offsetHeight + pinTop());
+        return travel > 0 ? Math.min(1, Math.max(0, (pinTop() - r.top) / travel)) : 0;
+      };
+      let ticking = false;
+      const onScroll = () => {
+        ticking = false;
+        const i = Math.min(n - 1, Math.floor(progressOf() * n));
+        if (i !== active) go(i, true);
+      };
+      addEventListener('scroll', () => { if (!ticking) { ticking = true; requestAnimationFrame(onScroll); } }, { passive: true });
+      onScroll();
+      // dragging the slider scrolls the page to that step
+      range?.addEventListener('change', () => {
+        const r = wrap.getBoundingClientRect();
+        const travel = r.height - (root.offsetHeight + pinTop());
+        const target = scrollY + r.top - pinTop() + travel * ((Number(range.value) + 0.5) / n);
+        scrollTo({ top: target, behavior: reduceMotion ? 'auto' : 'smooth' });
+      });
+      return;
+    }
     if (!reduceMotion) timer = window.setInterval(tick, interval);
     void timer;
   });

@@ -8,7 +8,7 @@ const n = steps.length;
 ---
 <section class="steps-wrap section" id={id} aria-labelledby={`${id}-title`}>
   <div class="container">
-    <div class="steps" data-loop="steps" data-count={n} data-interval="3200" data-progress>
+    <div class="steps" data-loop="steps" data-count={n} data-interval="3200" data-progress data-scroll-steps>
       <Image class="steps__pipes" src={network} alt="" widths={[700, 1324]} sizes="(min-width: 1024px) 1280px, 100vw" loading="lazy" />
 
       <h2 class="h2 center steps__title" id={`${id}-title`}>Jak to funguje?</h2>
@@ -39,6 +39,10 @@ const n = steps.length;
 
 <style>
   .steps-wrap { padding-block: 0; }
+  /* scroll-driven: the section is taller than the screen, the box stays pinned while steps 1 → 4 switch */
+  :global(.js) .steps-wrap { height: 230vh; }
+  :global(.js) .steps-wrap > .container { position: sticky; top: calc(var(--header-h) + 1rem); }
+  @media (max-height: 700px) { :global(.js) .steps-wrap > .container { top: calc(var(--header-h) + 0.25rem); } }
   .steps {
     position: relative; isolation: isolate; overflow: hidden;
     border-radius: var(--radius-xl); color: #fff;

@@ -1,4 +1,8 @@
 ---
+import { Image } from 'astro:assets';
+import kino from '../assets/img/mt-kino.png';
+import koncert from '../assets/img/mt-koncert.png';
+import divadlo from '../assets/img/mt-divadlo.png';
 /* Live, animated device mockup for the Portál hero – pure HTML/CSS, crisp at any size. */
 // deterministic QR-like pattern (decorative)
 const N = 21;
@@ -12,13 +16,12 @@ const finders = [[0, 0], [N - 7, 0], [0, N - 7]]
   .map(([x, y]) => `M${x} ${y}h7v7h-7zM${x + 1} ${y + 1}v5h5v-5zM${x + 2} ${y + 2}h3v3h-3z`)
   .join('');
 
-const events = [
-  { t: 'Letní festival 2026', d: '12.–14. 6.', p: 'od 890 Kč', c: 'linear-gradient(135deg,#ff7a59,#7b2ff7)' },
-  { t: 'Pub kvíz', d: 'čt 19:00', p: '150 Kč', c: 'linear-gradient(135deg,#1fd1a5,#2b5876)' },
-  { t: 'Hamlet', d: 'pá 19:30', p: 'od 290 Kč', c: 'linear-gradient(135deg,#f7b733,#fc4a1a)' },
-  { t: 'Jazz v parku', d: 'so 18:00', p: '350 Kč', c: 'linear-gradient(135deg,#8e2de2,#4a00e0)' },
-  { t: 'Noc v muzeu', d: 'so 20:00', p: '120 Kč', c: 'linear-gradient(135deg,#00c6ff,#0072ff)' },
-  { t: 'Stand-up show', d: 'ne 20:00', p: '390 Kč', c: 'linear-gradient(135deg,#ee0979,#ff6a00)' },
+const cards = [
+  { img: koncert, r: -14, x: -4, y: 9, flip: true, edge: true },
+  { img: kino, r: -7, x: 0, y: 3 },
+  { img: koncert, r: 0, x: 0, y: 0, focus: true },
+  { img: divadlo, r: 7, x: 0, y: 3 },
+  { img: kino, r: 14, x: 4, y: 9, flip: true, edge: true },
 ];
 ---
 <div class="pm" aria-hidden="true">
@@ -26,27 +29,28 @@ const events = [
   <div class="pm-laptop">
     <div class="pm-screen">
       <div class="pm-ui">
+        <svg class="pm-deco pm-deco--1" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 0 2-2h14a2 2 0 0 0 2 2v2a3 3 0 0 0 0 6v2a2 2 0 0 0-2 2H5a2 2 0 0 0-2-2v-2a3 3 0 0 0 0-6z" /></svg>
+        <svg class="pm-deco pm-deco--2" viewBox="0 0 24 24"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z" /></svg>
+        <svg class="pm-deco pm-deco--3" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 0 2-2h14a2 2 0 0 0 2 2v2a3 3 0 0 0 0 6v2a2 2 0 0 0-2 2H5a2 2 0 0 0-2-2v-2a3 3 0 0 0 0-6z" /></svg>
         <div class="pm-nav">
-          <span class="pm-logo"><b>My</b>Tickets</span>
-          <span class="pm-links"><i>Akce</i><i>Koncerty</i><i>Divadlo</i><i>Festivaly</i></span>
-          <span class="pm-login">Přihlásit</span>
+          <span class="pm-logo"><svg viewBox="0 0 24 24"><path d="M6 3l12 2-2 16L4 19z" fill="#17121f" /><path d="M9 6l10 1.6" stroke="#fff" stroke-width="1.4" /></svg>MyTickets</span>
+          <span class="pm-links"><i>Akce <small>⌄</small></i><i>Pro partnery</i><i>Kontakt</i></span>
+          <span class="pm-sell">Prodat vstupenky</span>
         </div>
         <div class="pm-hero">
           <p class="pm-hero__t">Najdi si svůj<br />další <em>zážitek.</em></p>
-          <div class="pm-search"><span>Hledat akci, místo nebo umělce…</span><b>Hledat</b></div>
-        </div>
-        <p class="pm-sec">Doporučujeme</p>
-        <div class="pm-row">
-          <div class="pm-track">
-            {events.map((e, i) => (
-              <div class:list={['pm-card', { 'pm-card--focus': i === 0 }]}>
-                <div class="pm-card__img" style={`background:${e.c}`}><span>{e.d}</span></div>
-                <p class="pm-card__t">{e.t}</p>
-                <p class="pm-card__p">{e.p}</p>
-                <span class="pm-card__btn">Koupit</span>
-              </div>
-            ))}
+          <div class="pm-search">
+            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5" /><path d="M16 16l4 4" /></svg>
+            <span class="pm-type">Hledej koncert</span>
+            <b>Hledat</b>
           </div>
+        </div>
+        <div class="pm-fan">
+          {cards.map((c) => (
+            <div class:list={['pm-fcard', { 'pm-fcard--focus': c.focus, 'pm-fcard--edge': c.edge }]} style={`--r:${c.r}deg; --x:${c.x}cqw; --y:${c.y}cqw`}>
+              <Image src={c.img} alt="" widths={[c.img.width]} class:list={{ flip: c.flip }} loading="lazy" />
+            </div>
+          ))}
         </div>
         <div class="pm-toast"><span class="pm-check">✓</span> Vstupenka odeslána do e-mailu</div>
         <svg class="pm-cursor" viewBox="0 0 24 24"><path d="M4 2l15 9-6.5 1.5L9.5 19z" fill="#fff" stroke="#0c1412" stroke-width="1.5" stroke-linejoin="round" /></svg>
@@ -61,8 +65,8 @@ const events = [
       <div class="pm-island"></div>
       <p class="pm-ph-h">Moje vstupenky</p>
       <div class="pm-ticket">
-        <div class="pm-ticket__top" style="background:linear-gradient(135deg,#ff7a59,#7b2ff7)">
-          <p>Letní festival 2026</p><span>12. 6. · 16:00</span>
+        <div class="pm-ticket__top" style="background:linear-gradient(120deg,#a855f7,#8b5cf6 55%,#06b6d4)">
+          <p>Koncert v O2 universum</p><span>12. 6. · 20:00</span>
         </div>
         <div class="pm-ticket__body">
           <div class="pm-qr">
@@ -101,41 +105,50 @@ const events = [
   }
   .pm-base span { position: absolute; left: 50%; top: 0; width: 14%; height: 45%; transform: translateX(-50%); background: #9da19e; border-radius: 0 0 8px 8px; }
 
-  /* UI inside (sized in container query units → scales with laptop) */
-  .pm-nav { display: flex; align-items: center; gap: 3cqw; padding: 2cqw 3.5cqw; font-size: 1.45cqw; background: #fff; border-bottom: 1px solid #ece9f5; }
-  .pm-logo { font-weight: 700; font-size: 1.9cqw; letter-spacing: -0.03em; }
-  .pm-logo b { color: #7b2ff7; }
-  .pm-links { display: flex; gap: 2.4cqw; color: #6b6480; }
-  .pm-links i { font-style: normal; }
-  .pm-login { margin-left: auto; padding: 0.8cqw 1.8cqw; border-radius: 99px; background: #17121f; color: #fff; font-weight: 600; }
-  .pm-hero {
-    margin: 2.2cqw 3.5cqw 0; padding: 3.2cqw 3.5cqw; border-radius: 1.6cqw; color: #fff;
-    background: radial-gradient(circle at 85% 20%, rgba(255,255,255,0.25), transparent 40%), linear-gradient(120deg, #7b2ff7, #b14cff 55%, #ff7ac6);
-    background-size: 200% 200%; animation: pm-hue 8s ease-in-out infinite alternate;
+  /* UI inside – recreates mytickets.vip (sized in container query units) */
+  .pm-ui { background: linear-gradient(180deg, #c7a3fb 0%, #d3b6fc 55%, #eadcff 100%); font-family: 'Poppins', var(--font); }
+  .pm-deco { position: absolute; width: 3.4cqw; fill: none; stroke: rgba(255,255,255,0.75); stroke-width: 1.4; }
+  .pm-deco--1 { left: 7cqw; top: 9cqw; } .pm-deco--2 { left: 15cqw; top: 19cqw; width: 2.2cqw; } .pm-deco--3 { right: 7cqw; top: 8cqw; width: 2.8cqw; }
+  .pm-nav {
+    position: relative; z-index: 2; display: flex; align-items: center; gap: 2.4cqw;
+    width: 50%; margin: 1.6cqw auto 0; padding: 1.1cqw 1.6cqw 1.1cqw 2cqw;
+    background: rgba(255,255,255,0.97); border-radius: 1.1cqw; box-shadow: 0 0.6cqw 2cqw rgba(90,40,160,0.15);
+    font-size: 1.05cqw; color: #17121f;
   }
-  .pm-hero__t { font-size: 3.6cqw; font-weight: 700; line-height: 1.05; letter-spacing: -0.04em; }
-  .pm-hero__t em { font-style: italic; font-family: Georgia, serif; font-weight: 400; }
-  .pm-search { display: flex; align-items: center; gap: 1cqw; margin-top: 2cqw; width: 58%; padding: 0.7cqw 0.7cqw 0.7cqw 1.6cqw; border-radius: 99px; background: #fff; color: #8b85a0; font-size: 1.3cqw; }
-  .pm-search span { flex: 1; }
-  .pm-search b { padding: 0.7cqw 1.6cqw; border-radius: 99px; background: #17121f; color: #fff; font-weight: 600; }
-  .pm-sec { margin: 2.2cqw 3.5cqw 1.2cqw; font-size: 1.7cqw; font-weight: 700; letter-spacing: -0.02em; }
-  .pm-row { overflow: hidden; padding: 0 0 2cqw 3.5cqw; mask-image: linear-gradient(90deg, #000 85%, transparent); }
-  .pm-track { display: flex; gap: 1.6cqw; width: max-content; }
-  .pm-card { animation: pm-card 9s ease-in-out infinite; }
-  .pm-card:nth-child(2) { animation-delay: -1.5s; } .pm-card:nth-child(3) { animation-delay: -3s; } .pm-card:nth-child(4) { animation-delay: -4.5s; } .pm-card:nth-child(5) { animation-delay: -6s; }
-  .pm-card--focus { animation: none; }
-  .pm-card { width: 17cqw; flex: none; background: #fff; border-radius: 1.2cqw; padding: 0.8cqw; box-shadow: 0 0.4cqw 1.2cqw rgba(40,20,80,0.08); }
-  .pm-card__img { position: relative; height: 9.5cqw; border-radius: 0.8cqw; overflow: hidden; }
-  .pm-card__img::after { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.35), transparent 50%); }
-  .pm-card__img span { position: absolute; left: 0.7cqw; bottom: 0.7cqw; z-index: 1; padding: 0.3cqw 0.8cqw; border-radius: 99px; background: rgba(255,255,255,0.9); font-size: 1.05cqw; font-weight: 600; }
-  .pm-card__t { margin-top: 0.8cqw; font-size: 1.35cqw; font-weight: 700; letter-spacing: -0.02em; white-space: nowrap; }
-  .pm-card__p { font-size: 1.15cqw; color: #6b6480; }
-  .pm-card__btn { display: block; margin-top: 0.8cqw; padding: 0.6cqw; border-radius: 0.7cqw; text-align: center; background: #efe8ff; color: #7b2ff7; font-size: 1.15cqw; font-weight: 700; }
-  .pm-card--focus .pm-card__btn { animation: pm-click var(--dur) infinite; }
-
+  .pm-logo { display: flex; align-items: center; gap: 0.5cqw; font-weight: 600; font-size: 1.75cqw; letter-spacing: -0.02em; }
+  .pm-logo svg { width: 1.9cqw; }
+  .pm-links { display: flex; gap: 1.6cqw; margin-left: auto; }
+  .pm-links i { font-style: normal; }
+  .pm-links small { font-size: 0.9em; }
+  .pm-sell { padding: 0.75cqw 1.3cqw; border-radius: 0.7cqw; color: #fff; background: linear-gradient(90deg, #a855f7, #8b5cf6, #06b6d4); background-size: 200% 100%; animation: pm-grad 4s ease-in-out infinite alternate; }
+  .pm-hero { position: relative; z-index: 2; text-align: center; margin-top: 4cqw; }
+  .pm-hero__t { color: #fff; font-size: 5.2cqw; font-weight: 700; line-height: 1.02; letter-spacing: -0.03em; }
+  .pm-hero__t em { font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-weight: 700; color: rgba(255,255,255,0.55); }
+  .pm-search {
+    display: flex; align-items: center; gap: 0.9cqw; width: 30%; margin: 2.6cqw auto 0;
+    padding: 0.5cqw 0.5cqw 0.5cqw 1.2cqw; border-radius: 99px; background: #fff;
+    box-shadow: 0 0 0 0.35cqw rgba(255,255,255,0.45), 0 0.8cqw 2cqw rgba(90,40,160,0.18); font-size: 1.15cqw; color: #8b85a0; text-align: left;
+  }
+  .pm-search svg { width: 1.4cqw; flex: none; fill: none; stroke: #8b85a0; stroke-width: 2; }
+  .pm-type { flex: 1; overflow: hidden; white-space: nowrap; width: 0; max-width: 11ch; animation: pm-type var(--dur) steps(14) infinite; border-right: 1px solid #7b2ff7; }
+  .pm-type { flex: none; }
+  .pm-search b { margin-left: auto; padding: 0.65cqw 1.4cqw; border-radius: 99px; background: #a855f7; color: #fff; font-weight: 500; }
+  .pm-fan { position: absolute; left: 0; right: 0; top: 37cqw; height: 40cqw; display: flex; justify-content: center; gap: 2.4cqw; }
+  .pm-fcard {
+    flex: none; width: 18cqw; height: 26cqw; padding: 0.55cqw; border-radius: 1.4cqw; background: #9d6cf6;
+    transform: translate(var(--x), var(--y)) rotate(var(--r));
+    animation: pm-fan 6s ease-in-out infinite;
+    box-shadow: 0 1cqw 2.5cqw rgba(80,30,160,0.25);
+  }
+  .pm-fcard:nth-child(2) { animation-delay: -1.2s; } .pm-fcard:nth-child(3) { animation-delay: -2.4s; } .pm-fcard:nth-child(4) { animation-delay: -3.6s; } .pm-fcard:nth-child(5) { animation-delay: -4.8s; }
+  .pm-fcard--focus { width: 20cqw; height: 28cqw; }
+  .pm-fcard--edge { opacity: 0.55; filter: blur(0.15cqw); }
+  .pm-fcard :global(img) { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: 1cqw; }
+  .pm-fcard :global(img.flip) { transform: scaleX(-1); }
+  .pm-fcard--focus { animation: pm-fan 6s ease-in-out infinite, pm-pick var(--dur) infinite; }
   .pm-cursor { position: absolute; width: 2.6cqw; left: 0; top: 0; z-index: 5; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.35)); animation: pm-cursor var(--dur) cubic-bezier(0.65, 0, 0.35, 1) infinite; }
   .pm-toast {
-    position: absolute; right: 3cqw; top: 9cqw; z-index: 4; display: flex; align-items: center; gap: 1cqw;
+    position: absolute; right: 3cqw; top: 6.5cqw; z-index: 4; display: flex; align-items: center; gap: 1cqw;
     padding: 1.2cqw 2cqw; border-radius: 1cqw; background: #17121f; color: #fff; font-size: 1.35cqw; font-weight: 600;
     box-shadow: 0 1cqw 3cqw rgba(0,0,0,0.25); animation: pm-toast var(--dur) infinite;
   }
@@ -164,8 +177,6 @@ const events = [
   .pm-valid::before { content: ''; width: 2.6cqw; height: 2.6cqw; border-radius: 50%; background: #2bd61a; box-shadow: 0 0 0 0 rgba(43,214,26,0.6); animation: pm-ping 1.6s infinite; }
 
   /* ---------- timeline ---------- */
-  @keyframes pm-scroll { to { transform: translateX(-50%); } }
-  @keyframes pm-hue { to { background-position: 100% 100%; } }
   @keyframes pm-float { 0%, 100% { translate: 0 0; } 50% { translate: 0 -10px; } }
   @keyframes pm-scan { 0%, 100% { top: -4%; } 50% { top: 100%; } }
   @keyframes pm-ping { 70% { box-shadow: 0 0 0 3cqw rgba(43,214,26,0); } 100% { box-shadow: 0 0 0 0 rgba(43,214,26,0); } }
@@ -173,17 +184,11 @@ const events = [
   @keyframes pm-cursor {
     0% { transform: translate(78cqw, 40cqw); opacity: 0; }
     8% { opacity: 1; }
-    30% { transform: translate(12cqw, 44.5cqw); }
-    36% { transform: translate(12cqw, 44.5cqw) scale(0.82); }
-    40% { transform: translate(12cqw, 44.5cqw) scale(1); }
+    30% { transform: translate(51cqw, 48cqw); }
+    36% { transform: translate(51cqw, 48cqw) scale(0.82); }
+    40% { transform: translate(51cqw, 48cqw) scale(1); }
     70% { transform: translate(60cqw, 34cqw); opacity: 1; }
     85%, 100% { transform: translate(78cqw, 40cqw); opacity: 0; }
-  }
-  @keyframes pm-click {
-    0%, 34% { background: #efe8ff; color: #7b2ff7; transform: none; }
-    37% { background: #7b2ff7; color: #fff; transform: scale(0.94); }
-    44%, 60% { background: #5dff4a; color: #0c1412; transform: none; }
-    70%, 100% { background: #efe8ff; color: #7b2ff7; }
   }
   @keyframes pm-toast {
     0%, 40% { opacity: 0; transform: translateY(-1.5cqw) scale(0.96); }
@@ -195,7 +200,14 @@ const events = [
     52%, 92% { opacity: 1; transform: none; filter: none; }
     100% { opacity: 0.25; transform: translateY(8cqw) scale(0.94); filter: blur(2px); }
   }
-    @keyframes pm-card { 0%, 100% { translate: 0 0; } 50% { translate: 0 -0.5cqw; } }
+    @keyframes pm-fan { 0%, 100% { translate: 0 0; } 50% { translate: 0 -0.8cqw; } }
+  @keyframes pm-grad { to { background-position: 100% 0; } }
+  @keyframes pm-type { 0%, 4% { width: 0; } 22%, 100% { width: 11ch; } }
+  @keyframes pm-pick {
+    0%, 34% { box-shadow: 0 1cqw 2.5cqw rgba(80,30,160,0.25); background: #9d6cf6; }
+    38%, 64% { box-shadow: 0 0 0 0.4cqw #5dff4a, 0 0 3cqw rgba(93,255,74,0.6); background: #5dff4a; }
+    74%, 100% { box-shadow: 0 1cqw 2.5cqw rgba(80,30,160,0.25); background: #9d6cf6; }
+  }
 
   @media (prefers-reduced-motion: reduce) {
     .pm *, .pm-phone { animation: none !important; }
