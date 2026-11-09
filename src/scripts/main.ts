@@ -94,6 +94,7 @@ function initLoops() {
         }
       });
       if (list) list.style.transform = `translateX(${-active * 100}%)`;
+      if (!progress && stage) stage.style.setProperty('--stage-h', `${items[active].offsetHeight}px`);
       if (range) {
         range.value = String(active);
         range.style.setProperty('--p', `${n > 1 ? (active / (n - 1)) * 100 : 0}%`);
@@ -136,6 +137,7 @@ function initLoops() {
       new IntersectionObserver(([en]) => { visible = en.isIntersecting; }, { threshold: 0.35 }).observe(root);
     }
     render();
+    if (!progress && stage && 'ResizeObserver' in window) new ResizeObserver(() => render()).observe(stage);
     if (!reduceMotion) timer = window.setInterval(tick, interval);
     void timer;
   });

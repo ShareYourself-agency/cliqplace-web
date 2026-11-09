@@ -40,6 +40,14 @@ const n = reviews.length;
     display: grid; position: relative; touch-action: pan-y;
     max-width: 30rem; margin-inline: auto;
   }
+  /* JS sets the stage to the active card's height → slider sits right under it */
+  :global(.js) .reviews__stage { height: var(--stage-h, auto); transition: height 0.6s var(--ease-out); }
+  :global(.js) .review { align-self: start; }
+  :global(.js) .review:not([data-pos='0']) {
+    max-height: var(--stage-h, none); overflow: hidden;
+    mask-image: linear-gradient(180deg, #000 70%, transparent);
+    -webkit-mask-image: linear-gradient(180deg, #000 70%, transparent);
+  }
   .review {
     grid-area: 1 / 1; align-self: center;
     background: var(--c-sage); border: 1px solid var(--c-line); border-radius: var(--radius);
@@ -63,7 +71,7 @@ const n = reviews.length;
   .review__text { display: grid; gap: 0.55rem; color: var(--c-text); line-height: 1.5; font-size: 0.975rem; transition: opacity 0.5s; }
   .review__person { margin-top: 1rem; font-size: 0.875rem; color: var(--c-green); font-weight: 500; }
 
-  .slidebar { max-width: 30rem; margin: clamp(2rem, 1.5rem + 1.5vw, 3rem) auto 0; }
+  .slidebar { max-width: 30rem; margin: 1.75rem auto 0; }
 
   @media (max-width: 639.98px) {
     .review[data-pos='-1'] { transform: translateX(-93%) scale(0.9); }
