@@ -58,18 +58,11 @@ const path = Astro.url.pathname.replace(/\/$/, '');
   .site-nav__list a:not(.btn):hover::after, .site-nav__list a[aria-current='page']::after { transform: scaleX(1); }
   .site-nav__mobile-cta { display: none; }
 
-  /* text roll on hover: label slides up, glowing lime copy slides in from below */
-  .roll { position: relative; display: inline-block; overflow: hidden; vertical-align: top; line-height: 1.5; }
-  .roll::after {
-    content: attr(data-label); content: attr(data-label) / ""; position: absolute; left: 0; top: 100%;
-    color: var(--c-lime); text-shadow: 0 0 12px rgba(199,255,156,0.55);
-  }
-  .site-header--light:not(.menu-open) .roll::after { color: var(--c-green); text-shadow: none; }
-  .roll > .roll__t, .roll::after { transition: translate 0.45s cubic-bezier(0.65, 0, 0.35, 1); }
-  .site-nav__list a:hover .roll > .roll__t, .site-nav__list a:hover .roll::after,
-  .site-nav__list a:focus-visible .roll > .roll__t, .site-nav__list a:focus-visible .roll::after { translate: 0 -100%; }
-  .roll__t { display: inline-block; }
-  @media (max-width: 1023.98px) { .roll::after { display: none; } }
+  /* hover: smooth colour change to lime with soft glow (no clipping) */
+  .roll { display: inline-block; }
+  .roll__t { transition: color 0.35s var(--ease-out), text-shadow 0.35s var(--ease-out); }
+  .site-nav__list a:hover .roll__t, .site-nav__list a:focus-visible .roll__t { color: var(--c-lime); text-shadow: 0 0 14px rgba(199,255,156,0.55); }
+  .site-header--light:not(.menu-open) .site-nav__list a:hover .roll__t { color: var(--c-green); text-shadow: none; }
 
   .menu-toggle { display: none; }
 

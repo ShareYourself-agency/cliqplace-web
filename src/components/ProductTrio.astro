@@ -23,7 +23,7 @@ const items = [
             <p class="trio__n">{it.n}</p>
             <h3 class="trio__t" set:html={it.t} />
             <p class="trio__d">{it.d}</p>
-            <div class="trio__img"><Image src={it.img} alt={it.alt} widths={[360, 720]} sizes="(min-width: 1024px) 400px, 90vw" loading="lazy" /></div>
+            <div class="trio__img"><Image src={it.img} alt={it.alt} widths={[400, 800, 1200]} quality={92} sizes="(min-width: 1024px) 400px, 90vw" loading="lazy" /></div>
             {active
               ? <a class="btn btn--ghost-dark btn--block trio__btn" href="#main">Zpět nahoru</a>
               : <a class="btn btn--soft btn--block trio__btn" href={it.href}>{it.cta}</a>}

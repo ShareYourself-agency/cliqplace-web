@@ -48,7 +48,7 @@ const cards = [
         <div class="pm-fan">
           {cards.map((c) => (
             <div class:list={['pm-fcard', { 'pm-fcard--focus': c.focus, 'pm-fcard--edge': c.edge }]} style={`--r:${c.r}deg; --x:${c.x}cqw; --y:${c.y}cqw`}>
-              <Image src={c.img} alt="" widths={[c.img.width]} class:list={{ flip: c.flip }} loading="lazy" />
+              <Image src={c.img} alt="" widths={[c.img.width]} quality={95} class:list={{ flip: c.flip }} loading="lazy" />
             </div>
           ))}
         </div>
@@ -196,9 +196,9 @@ const cards = [
     86%, 100% { opacity: 0; transform: translateY(-1.5cqw) scale(0.96); }
   }
   @keyframes pm-ticket {
-    0%, 42% { opacity: 0.25; transform: translateY(8cqw) scale(0.94); filter: blur(2px); }
-    52%, 92% { opacity: 1; transform: none; filter: none; }
-    100% { opacity: 0.25; transform: translateY(8cqw) scale(0.94); filter: blur(2px); }
+    0%, 42% { transform: none; box-shadow: 0 3cqw 8cqw rgba(40,20,80,0.14); }
+    46% { transform: scale(1.04); box-shadow: 0 0 0 1.2cqw rgba(93,255,74,0.55), 0 3cqw 8cqw rgba(40,20,80,0.14); }
+    54%, 100% { transform: none; box-shadow: 0 3cqw 8cqw rgba(40,20,80,0.14); }
   }
     @keyframes pm-fan { 0%, 100% { translate: 0 0; } 50% { translate: 0 -0.8cqw; } }
   @keyframes pm-grad { to { background-position: 100% 0; } }
