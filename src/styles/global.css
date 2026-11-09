@@ -67,6 +67,7 @@ body {
   text-rendering: optimizeLegibility;
   overflow-x: clip;
 }
+main { overflow-x: clip; }
 
 img, svg, video, picture { display: block; max-width: 100%; height: auto; }
 button, input, textarea, select { font: inherit; color: inherit; }
@@ -163,7 +164,7 @@ p { text-wrap: pretty; }
 
 /* light "sheet" that overlaps the dark hero with rounded top */
 .sheet {
-  position: relative; z-index: 2;
+  position: relative; z-index: 2; overflow-x: clip;
   background: var(--c-paper);
   border-radius: var(--radius-xl) var(--radius-xl) 0 0;
   margin-top: calc(var(--radius-xl) * -1);
@@ -286,9 +287,16 @@ p { text-wrap: pretty; }
 .bcard--cta .bcard__text { color: rgba(255,255,255,0.86); margin-bottom: 1.5rem; }
 .bcard--cta .btn { align-self: flex-start; }
 .bcard__visual { margin-top: auto; padding-top: 1.5rem; display: flex; justify-content: center; }
-@media (min-width: 900px) {
-  .bento { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem; }
+@media (min-width: 700px) {
+  .bento { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+  .bento__col { gap: 1rem; }
   .bento__col--offset { padding-top: 2.75rem; }
+}
+@media (min-width: 900px) { .bento, .bento__col { gap: 1.25rem; } }
+/* media cards on small screens: stronger scrim so text stays readable over photos/videos */
+@media (max-width: 899.98px) {
+  .bcard--media::after { background: linear-gradient(180deg, rgba(8,14,12,0.85) 0%, rgba(8,14,12,0.45) 42%, transparent 70%); }
+  .bcard { min-height: clamp(19rem, 60vw, 24rem); }
 }
 
 /* ==========================================================================

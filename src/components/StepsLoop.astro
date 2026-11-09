@@ -50,7 +50,9 @@ const n = steps.length;
   @media (max-width: 767.98px) { .steps__pipes { width: 260%; top: 62%; } }
   .steps__title { margin-bottom: clamp(2.5rem, 2rem + 2vw, 3.75rem); }
 
-  .steps__viewport { overflow: hidden; padding: 1.75rem 1rem; margin: -1.75rem -1rem; }
+  .steps__viewport { overflow: hidden; padding: 1.75rem 0; margin: -1.75rem 0; }
+  .step { padding-inline: 0.5rem !important; }
+  @media (min-width: 768px) { .step { padding-inline: 0 !important; } }
   @media (min-width: 768px) { .steps__viewport { overflow: visible; } }
   .steps__list { display: flex; transition: transform 0.6s var(--ease-out); }
   .step { flex: 0 0 100%; padding-inline: 0.25rem; }

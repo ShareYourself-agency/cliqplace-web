@@ -266,6 +266,11 @@ const steps = [
     .hero-card--hw { top: 0; margin-left: -9.15rem; }
     .home-hero__copy { position: relative; z-index: 2; }
   }
+  @media (min-width: 1024px) and (max-width: 1279.98px) {
+    .hero-cards { margin-bottom: -1rem; height: 15.5rem; }
+    .hero-card { width: 16rem; }
+    .hero-card--hw { margin-left: -8rem; }
+  }
   @media (min-width: 1280px) {
     .hero-card--sw { left: 1%; }
     .hero-card--pt { right: 1%; }
@@ -275,7 +280,7 @@ const steps = [
   .stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2.25rem 1rem; text-align: center; }
   .stat__num { font-size: clamp(2.5rem, 1.6rem + 3.6vw, 4rem); font-weight: 600; letter-spacing: -0.04em; line-height: 1; color: var(--c-lime); white-space: nowrap; }
   .stat__label { margin-top: 0.6rem; color: rgba(255,255,255,0.9); }
-  @media (min-width: 900px) { .stats { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+  @media (min-width: 640px) { .stats { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; } .stat__num { font-size: clamp(2rem, 0.8rem + 3.6vw, 4rem); } }
 
   /* ---------------- pillars ---------------- */
   .pillars__title { margin-bottom: clamp(2.5rem, 1.5rem + 3vw, 4rem); }
@@ -400,5 +405,37 @@ const steps = [
     .around__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem; }
     .around__col { gap: 1.25rem; }
     .around__col--offset { padding-top: 3.75rem; }
+  }
+</style>
+
+<style>
+  /* ---------- mobile & tablet refinements ---------- */
+  @media (min-width: 700px) and (max-width: 899.98px) {
+    .pillars__grid { grid-template-columns: repeat(3, minmax(0, 1fr)); max-width: none; gap: 1rem; }
+    .pillar { padding: 1.25rem 1rem 1.5rem; }
+    .pillar__title { font-size: 1.2rem; }
+    .pillar__text { font-size: 0.9rem; }
+    .pillar__btn { font-size: 0.875rem; padding-inline: 0.9rem; }
+  }
+  @media (min-width: 640px) and (max-width: 899.98px) {
+    .around__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .around__col--offset { padding-top: 2.5rem; }
+    .glass { min-height: 17rem; }
+  }
+  @media (max-width: 639.98px) {
+    /* compact audience rows: icon left, text right */
+    .audiences__grid { gap: 0.625rem; }
+    .audience { grid-template-columns: auto 1fr; column-gap: 1rem; row-gap: 0.15rem; padding: 1rem 1.1rem; align-items: start; }
+    .audience .icon-tile { grid-row: span 2; margin: 0; width: 2.75rem; height: 2.75rem; }
+    .audience__text { font-size: 0.925rem; max-width: none; }
+    .hero-cards { margin-top: 2rem; }
+    .stats { gap: 1.75rem 0.75rem; }
+    .stat__label { font-size: 0.925rem; }
+    /* glass cards: shorter, image beside the end */
+    .glass { min-height: 0; }
+    .glass__img { max-height: 9rem; max-width: 62%; }
+    .around__title { font-size: clamp(1.9rem, 1.2rem + 3vw, 2.4rem); }
+    .how-card__img { max-height: 7rem; }
+    .how__list { gap: 0.5rem; }
   }
 </style>

@@ -59,7 +59,13 @@ const items = [
   .trio__card.is-current { --card-bg: var(--c-sage-strong); }
   .trio__btn { position: relative; margin-top: -0.75rem; }
   .is-current .trio__btn { background: rgba(255,255,255,0.35); }
-  @media (min-width: 768px) {
+  @media (min-width: 640px) and (max-width: 1023.98px) {
+    .trio__card { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); column-gap: 1.5rem; align-items: center; }
+    .trio__n, .trio__t, .trio__d, .trio__btn { grid-column: 1; }
+    .trio__img { grid-column: 2; grid-row: 1 / span 4; height: 13rem; padding-top: 0; }
+    .trio__btn { margin-top: 1.25rem; justify-self: start; width: auto; }
+  }
+  @media (min-width: 1024px) {
     .trio__grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .trio__img { height: 12.5rem; }
   }

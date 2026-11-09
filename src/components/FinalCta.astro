@@ -6,7 +6,7 @@ import ribbon from '../assets/img/glowing-neon-green-energy-ribbon.png';
   <div class="container final-cta__wrap">
     <Image class="final-cta__ribbon" src={ribbon} alt="" widths={[900, 1500, 2145]} quality={92} sizes="(min-width: 1440px) 1400px, 100vw" loading="lazy" />
     <div class="final-cta__card" data-reveal>
-      <h2 class="h1 final-cta__title" id="final-cta-title"><span>Vy prodáváte vstupenky.</span> <span>My se postaráme</span> <span>o&nbsp;všechno okolo.</span></h2>
+      <h2 class="h1 final-cta__title" id="final-cta-title"><span>Vy prodáváte vstupenky.</span> <span>My se postaráme</span> <span>o&nbsp;všechno&nbsp;okolo.</span></h2>
       <a class="btn" href="/kontakt">Domluvit ukázku</a>
     </div>
   </div>
@@ -32,6 +32,9 @@ import ribbon from '../assets/img/glowing-neon-green-energy-ribbon.png';
   @media (min-width: 768px) { .final-cta__title span { display: block; } }
   @media (min-width: 768px) {
     .final-cta__card { flex-direction: row; align-items: center; }
+  }
+  @media (max-width: 767.98px) {
+    .final-cta__title { font-size: clamp(1.9rem, 1.2rem + 3.4vw, 2.6rem); }
   }
   @media (max-width: 767.98px) {
     .final-cta__ribbon { width: 190%; top: 52%; }
