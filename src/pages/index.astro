@@ -248,7 +248,7 @@ const steps = [
   .hero-card--hw { left: 50%; top: 0; margin-left: calc(min(56%, 18.3rem) / -2); z-index: 1; --rot: 0deg; }
   @keyframes levitate {
     0%, 100% { transform: translateY(0) rotate(var(--rot)); }
-    50% { transform: translateY(-14px) rotate(calc(var(--rot) * 0.6)); }
+    50% { transform: translateY(-16px) rotate(calc(var(--rot) * 0.6)); }
   }
 
   @media (min-width: 1024px) {
@@ -297,17 +297,15 @@ const steps = [
   @media (min-width: 900px) {
     .pillars__network { display: block; }
     .pillars__grid { grid-template-columns: repeat(3, minmax(0, 1fr)); max-width: 70rem; gap: clamp(2rem, 1rem + 3vw, 4.5rem); }
-    .pillar { transform: rotate(var(--r)); }
-    .js .pillar[data-reveal] { transform: translateY(24px) rotate(var(--r)); }
-    .js .pillar[data-reveal].is-in { transform: rotate(var(--r)); }
+    .pillar { rotate: var(--r); }
     .pillar:nth-child(2) { margin-top: -0.5rem; }
   }
 
   /* ---------------- audiences ---------------- */
   .audiences__title { margin-bottom: clamp(2.25rem, 1.5rem + 2.5vw, 3.5rem); }
   .audiences__grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; }
-  .audience { flex: 1 1 100%; padding: 1.5rem 1.5rem 1.75rem; display: grid; align-content: start; gap: 0.4rem; transition: transform 0.35s var(--ease-out), box-shadow 0.35s var(--ease-out); }
-  .audience:hover { transform: translateY(-4px); box-shadow: 0 20px 34px -24px rgba(13,21,19,0.4); }
+  .audience { flex: 1 1 100%; padding: 1.5rem 1.5rem 1.75rem; display: grid; align-content: start; gap: 0.4rem; transition: translate 0.35s var(--ease-out), box-shadow 0.35s var(--ease-out); }
+  .audience:hover { box-shadow: 0 20px 34px -24px rgba(13,21,19,0.4); }
   .audience .icon-tile { margin-bottom: 1.25rem; }
   .audience__text { color: var(--c-text); max-width: 28ch; }
   @media (min-width: 640px) { .audience { flex-basis: calc(50% - 0.5rem); flex-grow: 0; } }

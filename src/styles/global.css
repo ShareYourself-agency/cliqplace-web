@@ -123,11 +123,10 @@ p { text-wrap: pretty; }
   background: var(--btn-bg); color: var(--btn-fg);
   font-weight: 500; font-size: 1rem; line-height: 1.1; letter-spacing: -0.01em;
   border: 1px solid transparent; cursor: pointer; text-align: center;
-  transition: transform 0.25s var(--ease-out), box-shadow 0.25s var(--ease-out), background-color 0.2s;
-  white-space: nowrap;
+  transition: translate 0.25s var(--ease-out), box-shadow 0.25s var(--ease-out), background-color 0.2s;
+  white-space: nowrap; position: relative; overflow: hidden; isolation: isolate;
 }
-.btn:hover { transform: translateY(-2px); box-shadow: 0 10px 30px -10px rgba(199, 255, 156, 0.7); }
-.btn:active { transform: translateY(0); }
+.btn:hover { box-shadow: 0 10px 30px -10px rgba(199, 255, 156, 0.7); }
 .btn--ghost { --btn-bg: transparent; --btn-fg: #fff; border-color: rgba(255, 255, 255, 0.85); }
 .btn--ghost:hover { --btn-bg: rgba(255, 255, 255, 0.08); box-shadow: none; }
 .btn--ghost-dark { --btn-bg: transparent; --btn-fg: var(--c-ink); border-color: var(--c-ink); }
@@ -186,14 +185,14 @@ p { text-wrap: pretty; }
 .icon-tile img { width: 1.6rem; height: 1.6rem; }
 
 /* ---------- reveal on scroll ---------- */
-.js [data-reveal] { opacity: 0; transform: translateY(24px); transition: opacity 0.8s var(--ease-out), transform 0.8s var(--ease-out); transition-delay: var(--d, 0s); }
-.js [data-reveal].is-in { opacity: 1; transform: none; }
+.js [data-reveal] { opacity: 0; translate: 0 32px; filter: blur(6px); transition: opacity 0.9s var(--ease-out), translate 0.9s var(--ease-out), filter 0.9s var(--ease-out); transition-delay: var(--d, 0s); }
+.js [data-reveal].is-in { opacity: 1; translate: none; filter: none; }
 
 /* ---------- logo marquee ---------- */
 .logos { padding-block: clamp(2.5rem, 2rem + 2vw, 3.5rem) clamp(3rem, 2rem + 3vw, 4.5rem); }
 .logos__label { text-align: center; font-size: 1rem; color: rgba(255, 255, 255, 0.85); margin-bottom: 1.75rem; }
 .marquee {
-  --gap: clamp(2.5rem, 1.5rem + 3vw, 4.5rem);
+  --gap: clamp(2.75rem, 1.75rem + 3.5vw, 5rem);
   display: flex; overflow: hidden; user-select: none;
   mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
 }
@@ -202,14 +201,17 @@ p { text-wrap: pretty; }
   animation: marquee 40s linear infinite;
 }
 .marquee:hover .marquee__track { animation-play-state: paused; }
-.marquee__track img { height: clamp(1.6rem, 1.3rem + 0.8vw, 2.25rem); width: auto; opacity: 0.92; }
+.marquee__track li { display: flex; align-items: center; }
+.marquee__track img { height: calc(var(--h, 34) * var(--logo-scale, 0.8) * 1px); width: auto; opacity: 0.9; transition: opacity 0.3s, filter 0.3s; }
+.marquee__track img:hover { opacity: 1; filter: drop-shadow(0 0 10px rgba(199, 255, 156, 0.55)); }
+@media (min-width: 768px) { .marquee { --logo-scale: 1; } }
 @keyframes marquee { to { transform: translateX(-100%); } }
 
 /* ---------- reduced motion ---------- */
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
-  .js [data-reveal] { opacity: 1; transform: none; }
+  .js [data-reveal] { opacity: 1; translate: none; filter: none; }
   .marquee__track { animation: none; }
   .marquee { overflow-x: auto; }
 }
@@ -288,4 +290,109 @@ p { text-wrap: pretty; }
 @media (min-width: 900px) {
   .bento { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem; }
   .bento__col--offset { padding-top: 2.75rem; }
+}
+
+/* ==========================================================================
+   FX layer – hover flash, tilt, spotlight, split headings, progress, etc.
+   ========================================================================== */
+@property --fx-angle { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
+
+/* scroll progress */
+.fx-progress {
+  position: fixed; inset: 0 0 auto 0; height: 2px; z-index: 60; pointer-events: none;
+  transform-origin: left; transform: scaleX(var(--p, 0));
+  background: linear-gradient(90deg, #5dff4a, var(--c-lime));
+  box-shadow: 0 0 10px rgba(93,255,74,0.8);
+}
+
+/* hover flash ("probliknutí") – light band sweeping across */
+.fx-host { position: relative; overflow: hidden; }
+.fx-shine {
+  position: absolute; inset: 0; z-index: 5; pointer-events: none; overflow: hidden; border-radius: inherit;
+}
+.fx-shine::before {
+  content: ''; position: absolute; top: -20%; bottom: -20%; left: 0; width: 45%;
+  background: linear-gradient(100deg, transparent 0%, rgba(255,255,255,0) 20%, rgba(255,255,255,0.55) 50%, rgba(255,255,255,0) 80%, transparent 100%);
+  translate: -160% 0; skew: -18deg;
+  mix-blend-mode: soft-light;
+}
+.fx-shine--strong::before { mix-blend-mode: normal; background: linear-gradient(100deg, transparent 0%, rgba(255,255,255,0) 25%, rgba(255,255,255,0.45) 50%, rgba(255,255,255,0) 75%, transparent 100%); }
+.fx-host:hover > .fx-shine::before, .fx-host:focus-visible > .fx-shine::before { animation: fx-sweep 0.85s var(--ease-out); }
+@keyframes fx-sweep { from { translate: -160% 0; } to { translate: 330% 0; } }
+/* quick brightness blink together with the sweep */
+.fx-host:hover { animation: fx-blink 0.5s ease-out; }
+@keyframes fx-blink { 0% { filter: brightness(1); } 30% { filter: brightness(1.12); } 100% { filter: brightness(1); } }
+
+/* 3D tilt with glare */
+.fx-tilt {
+  transform: perspective(1100px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  transition: transform 0.6s var(--ease-out), box-shadow 0.4s var(--ease-out), translate 0.4s var(--ease-out);
+  will-change: transform;
+}
+.fx-tilt.is-tilting { transition: transform 0.12s linear, box-shadow 0.4s var(--ease-out), translate 0.4s var(--ease-out); }
+.fx-glare {
+  position: absolute; inset: 0; z-index: 4; pointer-events: none; border-radius: inherit; opacity: 0; transition: opacity 0.4s;
+  background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(255,255,255,0.35), transparent 45%);
+  mix-blend-mode: soft-light;
+}
+.fx-tilt.is-tilting > .fx-glare { opacity: 1; }
+
+/* lift on hover for cards */
+.fx-lift:hover { translate: 0 -6px; }
+
+/* rotating neon border on dark cards */
+.fx-neon::after {
+  content: ''; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none; z-index: 3;
+  background: conic-gradient(from var(--fx-angle), transparent 0deg, rgba(141,255,107,0.0) 40deg, rgba(141,255,107,0.95) 90deg, rgba(199,255,156,0.2) 140deg, transparent 200deg, transparent 360deg);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+  opacity: 0; transition: opacity 0.5s;
+  animation: fx-spin 4s linear infinite;
+}
+.fx-neon:hover::after { opacity: 1; }
+@keyframes fx-spin { to { --fx-angle: 360deg; } }
+
+/* cursor spotlight in dark sections */
+.fx-spot {
+  position: absolute; inset: 0; z-index: -1; pointer-events: none; opacity: 0; transition: opacity 0.6s;
+  background: radial-gradient(600px circle at var(--sx, 50%) var(--sy, 50%), rgba(141, 255, 107, 0.12), transparent 60%);
+}
+.fx-spot.is-on { opacity: 1; }
+
+/* grid slowly drifting in dark hero */
+.dark-shell::after { animation: fx-grid 30s linear infinite; }
+@keyframes fx-grid { to { background-position: center 72px; } }
+
+/* split headings – word by word */
+.fx-w { display: inline-block; white-space: pre; }
+.js .fx-split .fx-w {
+  opacity: 0; translate: 0 0.45em; filter: blur(10px);
+  transition: opacity 0.9s var(--ease-out), translate 0.9s var(--ease-out), filter 0.9s var(--ease-out);
+  transition-delay: calc(var(--wi) * 55ms);
+}
+.js .fx-split.is-in .fx-w { opacity: 1; translate: none; filter: none; }
+
+/* stat glow when counting finishes */
+.fx-done { animation: fx-glow 1.4s ease-out; }
+@keyframes fx-glow { 0% { text-shadow: 0 0 0 rgba(199,255,156,0); } 35% { text-shadow: 0 0 28px rgba(199,255,156,0.9); } 100% { text-shadow: 0 0 0 rgba(199,255,156,0); } }
+
+/* floating neon objects */
+.fx-float { animation: fx-float 7s ease-in-out infinite; }
+@keyframes fx-float { 0%, 100% { translate: 0 0; } 50% { translate: 0 -12px; } }
+
+/* page transitions (Chromium) */
+@view-transition { navigation: auto; }
+::view-transition-old(root) { animation: 0.25s ease-in both fx-vt-out; }
+::view-transition-new(root) { animation: 0.45s var(--ease-out) both fx-vt-in; }
+@keyframes fx-vt-out { to { opacity: 0; } }
+@keyframes fx-vt-in { from { opacity: 0; translate: 0 12px; } }
+
+/* links in nav/footer: short flicker */
+.site-nav__list a:not(.btn):hover, .site-footer a:hover { animation: fx-flicker 0.45s steps(1, end); }
+@keyframes fx-flicker { 0% { opacity: 1; } 20% { opacity: 0.35; } 35% { opacity: 1; } 55% { opacity: 0.6; } 70%, 100% { opacity: 1; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .js .fx-split .fx-w { opacity: 1; translate: none; filter: none; }
+  .fx-tilt { transform: none !important; }
+  .dark-shell::after, .fx-float, .fx-neon::after { animation: none; }
 }

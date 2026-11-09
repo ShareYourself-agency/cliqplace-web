@@ -45,19 +45,20 @@ function initCounters() {
     const to = Number(el.dataset.countTo || 0);
     const out = el.querySelector<HTMLElement>('[data-count-value]') || el;
     if (reduceMotion) { out.textContent = fmt.format(to); return; }
-    const dur = 1800; const t0 = performance.now();
+    const dur = 2600; const t0 = performance.now();
     const step = (t: number) => {
       const p = Math.min(1, (t - t0) / dur);
-      const eased = 1 - Math.pow(1 - p, 4);
+      const eased = 1 - Math.pow(1 - p, 2.2);
       out.textContent = fmt.format(Math.round(to * eased));
       if (p < 1) requestAnimationFrame(step);
+      else out.classList.add('fx-done');
     };
     requestAnimationFrame(step);
   };
   if (!('IntersectionObserver' in window)) { els.forEach(run); return; }
   const io = new IntersectionObserver((entries) => {
     entries.forEach((en) => { if (en.isIntersecting) { run(en.target as HTMLElement); io.unobserve(en.target); } });
-  }, { threshold: 0.4 });
+  }, { threshold: 0.6, rootMargin: '0px 0px -10% 0px' });
   els.forEach((el) => { const out = el.querySelector<HTMLElement>('[data-count-value]'); if (out) out.textContent = '0'; io.observe(el); });
 }
 
@@ -185,6 +186,173 @@ function initVideos() {
   vids.forEach((v) => io.observe(v));
 }
 
+
+/* ================================================================== FX */
+const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+
+function initProgress() {
+  const bar = document.createElement('div');
+  bar.className = 'fx-progress'; bar.setAttribute('aria-hidden', 'true');
+  document.body.appendChild(bar);
+  let ticking = false;
+  const upd = () => {
+    ticking = false;
+    const max = document.documentElement.scrollHeight - innerHeight;
+    bar.style.setProperty('--p', String(max > 0 ? Math.min(1, scrollY / max) : 0));
+  };
+  addEventListener('scroll', () => { if (!ticking) { ticking = true; requestAnimationFrame(upd); } }, { passive: true });
+  upd();
+}
+
+function initSplit() {
+  const heads = document.querySelectorAll<HTMLElement>('main .h1, main .h2');
+  heads.forEach((h) => {
+    let wi = 0;
+    const walk = (node: Node) => {
+      Array.from(node.childNodes).forEach((child) => {
+        if (child.nodeType === Node.TEXT_NODE) {
+          const parts = (child.textContent || '').split(/(\s+)/);
+          const frag = document.createDocumentFragment();
+          parts.forEach((part) => {
+            if (!part) return;
+            if (/^\s+$/.test(part)) { frag.appendChild(document.createTextNode(part)); return; }
+            const w = document.createElement('span');
+            w.className = 'fx-w'; w.style.setProperty('--wi', String(wi++)); w.textContent = part;
+            frag.appendChild(w);
+          });
+          child.replaceWith(frag);
+        } else if (child.nodeType === Node.ELEMENT_NODE && (child as Element).tagName !== 'BR') {
+          walk(child);
+        }
+      });
+    };
+    h.setAttribute('aria-label', h.textContent?.replace(/\s+/g, ' ').trim() || '');
+    walk(h);
+    h.querySelectorAll('.fx-w').forEach((w) => w.setAttribute('aria-hidden', 'true'));
+    h.classList.add('fx-split');
+  });
+  if (reduceMotion) { heads.forEach((h) => h.classList.add('is-in')); return; }
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((en) => { if (en.isIntersecting) { en.target.classList.add('is-in'); io.unobserve(en.target); } });
+  }, { threshold: 0.2, rootMargin: '0px 0px -5% 0px' });
+  heads.forEach((h) => io.observe(h));
+}
+
+function initShine() {
+  const strong = '.btn, .trio__card, .audience, .pillar, .faq__item, .how-card, .how-cta';
+  const soft = '.glass, .bcard, .review, .contact__card';
+  const add = (el: Element, cls: string) => {
+    if (el.querySelector(':scope > .fx-shine')) return;
+    el.classList.add('fx-host');
+    const s = document.createElement('span');
+    s.className = cls; s.setAttribute('aria-hidden', 'true');
+    el.appendChild(s);
+  };
+  document.querySelectorAll(strong).forEach((el) => add(el, 'fx-shine fx-shine--strong'));
+  document.querySelectorAll(soft).forEach((el) => add(el, 'fx-shine'));
+  document.querySelectorAll('.glass, .bcard--cta, .final-cta__card, .hw-more, .pt-data').forEach((el) => el.classList.add('fx-neon'));
+  document.querySelectorAll('.audience, .trio__card').forEach((el) => el.classList.add('fx-lift'));
+}
+
+function initTilt() {
+  if (!finePointer || reduceMotion) return;
+  const els = document.querySelectorAll<HTMLElement>('.pillar, .audience, .glass, .bcard, .trio__card, .final-cta__card, .how-card');
+  els.forEach((el) => {
+    el.classList.add('fx-tilt');
+    const glare = document.createElement('span');
+    glare.className = 'fx-glare'; glare.setAttribute('aria-hidden', 'true');
+    el.appendChild(glare);
+    const max = el.classList.contains('final-cta__card') ? 3 : 7;
+    el.addEventListener('pointermove', (e) => {
+      const r = el.getBoundingClientRect();
+      const x = (e.clientX - r.left) / r.width; const y = (e.clientY - r.top) / r.height;
+      el.style.setProperty('--ry', `${(x - 0.5) * max * 2}deg`);
+      el.style.setProperty('--rx', `${(0.5 - y) * max * 2}deg`);
+      el.style.setProperty('--mx', `${x * 100}%`);
+      el.style.setProperty('--my', `${y * 100}%`);
+      el.classList.add('is-tilting');
+    });
+    el.addEventListener('pointerleave', () => {
+      el.classList.remove('is-tilting');
+      el.style.setProperty('--rx', '0deg'); el.style.setProperty('--ry', '0deg');
+    });
+  });
+}
+
+function initMagnetic() {
+  if (!finePointer || reduceMotion) return;
+  document.querySelectorAll<HTMLElement>('.btn').forEach((b) => {
+    b.addEventListener('pointermove', (e) => {
+      const r = b.getBoundingClientRect();
+      const dx = e.clientX - (r.left + r.width / 2); const dy = e.clientY - (r.top + r.height / 2);
+      b.style.translate = `${dx * 0.18}px ${dy * 0.28 - 2}px`;
+    });
+    b.addEventListener('pointerleave', () => { b.style.translate = ''; });
+  });
+}
+
+function initSpotlight() {
+  if (!finePointer || reduceMotion) return;
+  document.querySelectorAll<HTMLElement>('.dark-shell, .around__box, .steps, .site-footer').forEach((sec) => {
+    const spot = document.createElement('div');
+    spot.className = 'fx-spot'; spot.setAttribute('aria-hidden', 'true');
+    sec.prepend(spot);
+    sec.addEventListener('pointermove', (e) => {
+      const r = sec.getBoundingClientRect();
+      spot.style.setProperty('--sx', `${e.clientX - r.left}px`);
+      spot.style.setProperty('--sy', `${e.clientY - r.top}px`);
+      spot.classList.add('is-on');
+    });
+    sec.addEventListener('pointerleave', () => spot.classList.remove('is-on'));
+  });
+}
+
+function initHeroParallax() {
+  if (reduceMotion) return;
+  const cards = Array.from(document.querySelectorAll<HTMLElement>('.hero-card'));
+  const hero = document.querySelector<HTMLElement>('.home-hero');
+  if (finePointer && cards.length && hero) {
+    const depth = [18, 10, 26];
+    hero.addEventListener('pointermove', (e) => {
+      const x = e.clientX / innerWidth - 0.5; const y = e.clientY / innerHeight - 0.5;
+      cards.forEach((c, i) => { c.style.translate = `${-x * depth[i]}px ${-y * depth[i]}px`; });
+    });
+    hero.addEventListener('pointerleave', () => cards.forEach((c) => { c.style.translate = ''; }));
+  }
+  // subpage hero visual: tilts back and straightens on scroll
+  const vis = document.querySelector<HTMLElement>('.page-hero__visual');
+  if (vis) {
+    const target = vis.firstElementChild as HTMLElement | null;
+    if (!target) return;
+    target.style.transformOrigin = '50% 100%';
+    target.style.willChange = 'transform';
+    let ticking = false;
+    const upd = () => {
+      ticking = false;
+      const p = Math.min(1, Math.max(0, scrollY / (innerHeight * 0.55)));
+      target.style.transform = `perspective(1400px) rotateX(${(1 - p) * 16}deg) scale(${0.93 + p * 0.07})`;
+    };
+    addEventListener('scroll', () => { if (!ticking) { ticking = true; requestAnimationFrame(upd); } }, { passive: true });
+    upd();
+  }
+}
+
+function initFloat() {
+  if (reduceMotion) return;
+  document.querySelectorAll<HTMLElement>('.glass__img, .how-cta__img').forEach((el, i) => {
+    el.classList.add('fx-float');
+    el.style.animationDelay = `${-i * 1.3}s`;
+  });
+}
+
+initSplit();
+initShine();
+initTilt();
+initMagnetic();
+initSpotlight();
+initHeroParallax();
+initFloat();
+initProgress();
 initHeader();
 initReveal();
 initCounters();

@@ -29,9 +29,14 @@ const logos = [
   <div class="marquee">
     {[0, 1].map((copy) => (
       <ul role="list" class="marquee__track" aria-hidden={copy === 1 ? 'true' : undefined}>
-        {logos.map(([src, alt]) => (
-          <li><Image src={src} alt={copy === 1 ? '' : alt} height={72} densities={[1, 2]} loading="lazy" /></li>
-        ))}
+        {logos.map(([src, alt]) => {
+          // optical sizing: wide logos get lower, compact logos taller → equal visual weight
+          const ratio = src.width / src.height;
+          const h = Math.round(Math.min(46, Math.max(20, 38 * Math.pow(2.2 / ratio, 0.45))));
+          return (
+            <li style={`--h:${h}`}><Image src={src} alt={copy === 1 ? '' : alt} height={h * 2} loading="lazy" /></li>
+          );
+        })}
       </ul>
     ))}
   </div>
