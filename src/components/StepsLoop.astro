@@ -39,10 +39,7 @@ const n = steps.length;
 
 <style>
   .steps-wrap { padding-block: 0; }
-  /* scroll-driven: the section is taller than the screen, the box stays pinned while steps 1 → 4 switch */
-  :global(.js) .steps-wrap { height: 230vh; }
-  :global(.js) .steps-wrap > .container { position: sticky; top: calc(var(--header-h) + 1rem); }
-  @media (max-height: 700px) { :global(.js) .steps-wrap > .container { top: calc(var(--header-h) + 0.25rem); } }
+
   .steps {
     position: relative; isolation: isolate; overflow: hidden;
     border-radius: var(--radius-xl); color: #fff;

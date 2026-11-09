@@ -141,12 +141,11 @@ function initLoops() {
 
     // steps: driven by scroll position (1 → 4 while the pinned box is on screen)
     if (root.hasAttribute('data-scroll-steps')) {
-      const wrap = root.closest('section') as HTMLElement;
-      const pinTop = () => parseFloat(getComputedStyle(wrap.querySelector('.container')!).top) || 0;
+      // normal scrolling (no pinning): steps advance while the box travels from the bottom to the upper part of the viewport
       const progressOf = () => {
-        const r = wrap.getBoundingClientRect();
-        const travel = r.height - (root.offsetHeight + pinTop());
-        return travel > 0 ? Math.min(1, Math.max(0, (pinTop() - r.top) / travel)) : 0;
+        const r = root.getBoundingClientRect(); const vh = innerHeight;
+        const start = vh * 0.85, end = vh * 0.25;
+        return Math.min(1, Math.max(0, (start - r.top) / (start - end)));
       };
       let ticking = false;
       const onScroll = () => {
@@ -155,14 +154,8 @@ function initLoops() {
         if (i !== active) go(i, true);
       };
       addEventListener('scroll', () => { if (!ticking) { ticking = true; requestAnimationFrame(onScroll); } }, { passive: true });
+      addEventListener('resize', onScroll);
       onScroll();
-      // dragging the slider scrolls the page to that step
-      range?.addEventListener('change', () => {
-        const r = wrap.getBoundingClientRect();
-        const travel = r.height - (root.offsetHeight + pinTop());
-        const target = scrollY + r.top - pinTop() + travel * ((Number(range.value) + 0.5) / n);
-        scrollTo({ top: target, behavior: reduceMotion ? 'auto' : 'smooth' });
-      });
       return;
     }
     if (!reduceMotion) timer = window.setInterval(tick, interval);
