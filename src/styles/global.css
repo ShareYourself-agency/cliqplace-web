@@ -317,7 +317,7 @@ p { text-wrap: pretty; }
   mix-blend-mode: soft-light;
 }
 .fx-shine--strong::before { mix-blend-mode: normal; background: linear-gradient(100deg, transparent 0%, rgba(255,255,255,0) 25%, rgba(255,255,255,0.45) 50%, rgba(255,255,255,0) 75%, transparent 100%); }
-.fx-host:hover > .fx-shine::before, .fx-host:focus-visible > .fx-shine::before { animation: fx-sweep 0.85s var(--ease-out); }
+.fx-host:hover > .fx-shine::before, .fx-host:focus-visible > .fx-shine::before { animation: fx-sweep 1.1s cubic-bezier(0.4, 0, 0.2, 1); }
 @keyframes fx-sweep { from { translate: -160% 0; } to { translate: 330% 0; } }
 /* quick light blink together with the sweep (overlay only – no filter on the card itself) */
 .fx-shine::after { content: ''; position: absolute; inset: 0; background: rgba(255,255,255,0.10); opacity: 0; }
@@ -327,10 +327,10 @@ p { text-wrap: pretty; }
 /* 3D tilt with glare */
 .fx-tilt {
   transform: perspective(1100px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
-  transition: transform 0.6s var(--ease-out), box-shadow 0.4s var(--ease-out), translate 0.4s var(--ease-out);
-  will-change: transform;
+  transition: box-shadow 0.5s var(--ease-out), translate 0.5s var(--ease-out);
+  backface-visibility: hidden;
 }
-.fx-tilt.is-tilting { transition: transform 0.12s linear, box-shadow 0.4s var(--ease-out), translate 0.4s var(--ease-out); }
+.fx-tilt.is-tilting { will-change: transform; }
 .fx-glare {
   position: absolute; inset: 0; z-index: 4; pointer-events: none; border-radius: inherit; opacity: 0; transition: opacity 0.4s;
   background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(255,255,255,0.35), transparent 45%);
@@ -339,7 +339,7 @@ p { text-wrap: pretty; }
 .fx-tilt.is-tilting > .fx-glare { opacity: 1; }
 
 /* lift on hover for cards */
-.fx-lift:hover { translate: 0 -6px; }
+.fx-lift:hover { translate: 0 -4px; }
 
 /* rotating neon border on dark cards */
 .fx-neon::after {

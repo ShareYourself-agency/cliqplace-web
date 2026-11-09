@@ -50,9 +50,13 @@ const items = [
   .trio__d { color: var(--c-text); font-size: 0.9375rem; max-width: 30ch; }
   .trio__img {
     margin-top: auto; padding-top: 1.75rem; display: flex; justify-content: center; align-items: flex-end;
-    height: 11.5rem; mask-image: linear-gradient(180deg, #000 70%, transparent);
+    height: 11.5rem;
   }
   .trio__img img { max-height: 100%; width: auto; object-fit: contain; }
+  .trio__img { position: relative; }
+  .trio__img::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 35%; background: linear-gradient(180deg, transparent, var(--card-bg)); pointer-events: none; }
+  .trio__card { --card-bg: var(--c-sage); }
+  .trio__card.is-current { --card-bg: var(--c-sage-strong); }
   .trio__btn { position: relative; margin-top: -0.75rem; }
   .is-current .trio__btn { background: rgba(255,255,255,0.35); }
   @media (min-width: 768px) {

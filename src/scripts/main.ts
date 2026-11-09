@@ -262,20 +262,28 @@ function initTilt() {
     const glare = document.createElement('span');
     glare.className = 'fx-glare'; glare.setAttribute('aria-hidden', 'true');
     el.appendChild(glare);
-    const max = el.classList.contains('final-cta__card') ? 3 : 7;
+    const big = el.classList.contains('final-cta__card') || el.classList.contains('how-card');
+    const max = big ? 2.5 : el.classList.contains('trio__card') || el.classList.contains('audience') ? 4 : 5;
+    // target & current values, eased every frame → silky, no jumps
+    let tx = 0, ty = 0, cx = 0, cy = 0, mx = 50, my = 50, raf = 0, rect: DOMRect | null = null;
+    const loop = () => {
+      cx += (tx - cx) * 0.12; cy += (ty - cy) * 0.12;
+      el.style.setProperty('--rx', `${cy.toFixed(3)}deg`);
+      el.style.setProperty('--ry', `${cx.toFixed(3)}deg`);
+      el.style.setProperty('--mx', `${mx}%`);
+      el.style.setProperty('--my', `${my}%`);
+      raf = Math.abs(tx - cx) + Math.abs(ty - cy) > 0.01 ? requestAnimationFrame(loop) : 0;
+    };
+    const kick = () => { if (!raf) raf = requestAnimationFrame(loop); };
+    el.addEventListener('pointerenter', () => { rect = el.getBoundingClientRect(); el.classList.add('is-tilting'); });
     el.addEventListener('pointermove', (e) => {
-      const r = el.getBoundingClientRect();
-      const x = (e.clientX - r.left) / r.width; const y = (e.clientY - r.top) / r.height;
-      el.style.setProperty('--ry', `${(x - 0.5) * max * 2}deg`);
-      el.style.setProperty('--rx', `${(0.5 - y) * max * 2}deg`);
-      el.style.setProperty('--mx', `${x * 100}%`);
-      el.style.setProperty('--my', `${y * 100}%`);
-      el.classList.add('is-tilting');
+      if (!rect) rect = el.getBoundingClientRect();
+      const x = (e.clientX - rect.left) / rect.width; const y = (e.clientY - rect.top) / rect.height;
+      tx = (x - 0.5) * max * 2; ty = (0.5 - y) * max * 2;
+      mx = Math.round(x * 100); my = Math.round(y * 100);
+      kick();
     });
-    el.addEventListener('pointerleave', () => {
-      el.classList.remove('is-tilting');
-      el.style.setProperty('--rx', '0deg'); el.style.setProperty('--ry', '0deg');
-    });
+    el.addEventListener('pointerleave', () => { tx = 0; ty = 0; rect = null; el.classList.remove('is-tilting'); kick(); });
   });
 }
 
