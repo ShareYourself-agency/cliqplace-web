@@ -394,3 +394,9 @@ p { text-wrap: pretty; }
   .fx-tilt { transform: none !important; }
   .dark-shell::after, .fx-float, .fx-neon::after { animation: none; }
 }
+
+/* bento cards (often with video): calmer hover – no blink flash, no glare, softer & slower sweep */
+.bcard > .fx-shine::after, .glass > .fx-shine::after, .review > .fx-shine::after { display: none; }
+.bcard > .fx-glare { display: none; }
+.bcard:hover > .fx-shine::before { animation-duration: 1.6s; opacity: 0.55; }
+.bcard .bcard__bg { backface-visibility: hidden; transform: translateZ(0); }

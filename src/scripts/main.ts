@@ -265,7 +265,7 @@ function initTilt() {
     glare.className = 'fx-glare'; glare.setAttribute('aria-hidden', 'true');
     el.appendChild(glare);
     const big = el.classList.contains('final-cta__card') || el.classList.contains('how-card');
-    const max = big ? 2.5 : el.classList.contains('trio__card') || el.classList.contains('audience') ? 4 : 5;
+    const max = big ? 2.5 : el.classList.contains('bcard') ? 3 : el.classList.contains('trio__card') || el.classList.contains('audience') ? 4 : 5;
     // target & current values, eased every frame → silky, no jumps
     let tx = 0, ty = 0, cx = 0, cy = 0, mx = 50, my = 50, raf = 0, rect: DOMRect | null = null;
     const loop = () => {
