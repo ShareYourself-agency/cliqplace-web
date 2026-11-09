@@ -1,0 +1,39 @@
+---
+import { Image } from 'astro:assets';
+import ribbon from '../assets/img/glowing-neon-green-energy-ribbon.png';
+---
+<section class="final-cta section" aria-labelledby="final-cta-title">
+  <div class="container final-cta__wrap">
+    <Image class="final-cta__ribbon" src={ribbon} alt="" widths={[700, 1400]} sizes="(min-width: 1440px) 1400px, 100vw" loading="lazy" />
+    <div class="final-cta__card" data-reveal>
+      <h2 class="h1 final-cta__title" id="final-cta-title"><span>Vy prodáváte vstupenky.</span> <span>My se postaráme</span> <span>o&nbsp;všechno okolo.</span></h2>
+      <a class="btn" href="/kontakt">Domluvit ukázku</a>
+    </div>
+  </div>
+</section>
+
+<style>
+  .final-cta { padding-block: clamp(3.5rem, 2.5rem + 3vw, 5.5rem) calc(var(--section-y) * 0.5); overflow: hidden; }
+  .final-cta__wrap { position: relative; }
+  .final-cta__ribbon {
+    position: absolute; left: 50%; top: 50%; width: 112%; max-width: none; height: auto;
+    transform: translate(-50%, -50%); pointer-events: none;
+    filter: drop-shadow(0 0 24px rgba(93, 255, 74, 0.25));
+  }
+  .final-cta__card {
+    position: relative; z-index: 1;
+    display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between; gap: 2rem;
+    padding: clamp(2.25rem, 1.5rem + 3.5vw, 4.5rem) clamp(1.5rem, 1rem + 3.5vw, 4.5rem);
+    border-radius: var(--radius-xl);
+    background: linear-gradient(105deg, #3b6544 0%, #1d3326 55%, #0c1412 100%);
+    color: #fff; box-shadow: 0 30px 60px -30px rgba(12, 20, 18, 0.6);
+  }
+  .final-cta__title { max-width: none; }
+  @media (min-width: 768px) { .final-cta__title span { display: block; } }
+  @media (min-width: 768px) {
+    .final-cta__card { flex-direction: row; align-items: center; }
+  }
+  @media (max-width: 767.98px) {
+    .final-cta__ribbon { width: 190%; top: 52%; }
+  }
+</style>

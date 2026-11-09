@@ -1,0 +1,82 @@
+---
+import { Image } from 'astro:assets';
+import network from '../assets/img/neon-green-glass-network.png';
+interface Step { title: string; text: string }
+interface Props { steps: Step[]; id?: string }
+const { steps, id = 'jak-to-funguje' } = Astro.props;
+const n = steps.length;
+---
+<section class="steps-wrap section" id={id} aria-labelledby={`${id}-title`}>
+  <div class="container">
+    <div class="steps" data-loop="steps" data-count={n} data-interval="3200" data-progress>
+      <Image class="steps__pipes" src={network} alt="" widths={[700, 1324]} sizes="(min-width: 1024px) 1280px, 100vw" loading="lazy" />
+
+      <h2 class="h2 center steps__title" id={`${id}-title`}>Jak to funguje?</h2>
+
+      <div class="steps__viewport" data-loop-stage>
+        <ol role="list" class="steps__list" style={`--n:${n}`}>
+          {steps.map((s, i) => (
+            <li class="step" data-loop-item={i}>
+              <div class="step__marker">
+                <span class="step__num">{i + 1}</span>
+                {i < n - 1 && <span class="step__line" aria-hidden="true"><span></span></span>}
+              </div>
+              <h3 class="step__title" set:html={s.title} />
+              <p class="step__text">{s.text}</p>
+            </li>
+          ))}
+        </ol>
+      </div>
+
+      <div class="slidebar slidebar--dark">
+        <label class="sr-only" for={`${id}-range`}>Krok postupu</label>
+        <input id={`${id}-range`} class="slidebar__range" type="range" min="0" max={n - 1} step="1" value="0" data-loop-range />
+      </div>
+      <p class="sr-only" aria-live="polite" data-loop-live></p>
+    </div>
+  </div>
+</section>
+
+<style>
+  .steps-wrap { padding-block: 0; }
+  .steps {
+    position: relative; isolation: isolate; overflow: hidden;
+    border-radius: var(--radius-xl); color: #fff;
+    padding: clamp(3.5rem, 2.5rem + 3.5vw, 5.5rem) clamp(1.25rem, 0.5rem + 3.5vw, 4rem) clamp(3rem, 2rem + 3vw, 5rem);
+    background: linear-gradient(180deg, #386041 0%, #22392b 55%, #111c17 100%);
+  }
+  .steps__pipes { position: absolute; left: 50%; top: 58%; width: 125%; max-width: none; height: auto; transform: translate(-50%, -50%); z-index: -1; opacity: 0.16; filter: saturate(0.35) brightness(1.1); pointer-events: none; }
+  @media (max-width: 767.98px) { .steps__pipes { width: 260%; top: 62%; } }
+  .steps__title { margin-bottom: clamp(2.5rem, 2rem + 2vw, 3.75rem); }
+
+  .steps__viewport { overflow: hidden; }
+  .steps__list { display: flex; transition: transform 0.6s var(--ease-out); }
+  .step { flex: 0 0 100%; padding-inline: 0.25rem; }
+  .step__marker { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.75rem; }
+  .step__num {
+    flex: none; display: grid; place-items: center; width: 3rem; height: 3rem; border-radius: 0.75rem;
+    font-size: 1.5rem; font-weight: 500; color: rgba(199,255,156,0.35);
+    border: 1px solid rgba(199,255,156,0.22);
+    background: rgba(255,255,255,0.03);
+    transition: color 0.4s, border-color 0.4s, background-color 0.4s, box-shadow 0.4s;
+  }
+  .step__line { flex: 1; height: 2px; background: rgba(199,255,156,0.14); border-radius: 2px; overflow: hidden; display: none; }
+  .step__line span { display: block; height: 100%; background: var(--c-lime-2); transform: scaleX(0); transform-origin: left; transition: transform 0.6s var(--ease-out); }
+  .step__title { font-size: clamp(1.375rem, 1.25rem + 0.4vw, 1.5625rem); letter-spacing: -0.03em; margin-bottom: 0.75rem; transition: opacity 0.4s; }
+  .step__text { color: rgba(255,255,255,0.82); max-width: 18rem; transition: opacity 0.4s; }
+
+  .step[data-state='done'] .step__num, .step[data-state='active'] .step__num {
+    color: var(--c-lime); border-color: rgba(199,255,156,0.85); background: rgba(177,235,130,0.12);
+  }
+  .step[data-state='active'] .step__num { box-shadow: 0 0 0 4px rgba(199,255,156,0.12), 0 0 24px rgba(177,235,130,0.35); }
+  .step[data-state='done'] .step__line span { transform: scaleX(1); }
+  .step[data-state='next'] .step__title, .step[data-state='next'] .step__text { opacity: 0.6; }
+
+  .slidebar--dark { max-width: 30rem; margin: clamp(2.5rem, 2rem + 2vw, 3.5rem) auto 0; }
+
+  @media (min-width: 768px) {
+    .steps__list { transform: none !important; display: grid; grid-template-columns: repeat(var(--n, 4), minmax(0, 1fr)); gap: 1.5rem; }
+    .step { padding: 0; }
+    .step__line { display: block; }
+  }
+</style>

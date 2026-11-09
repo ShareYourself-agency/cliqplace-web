@@ -1,0 +1,189 @@
+---
+import Base from '../layouts/Base.astro';
+import LogoMarquee from '../components/LogoMarquee.astro';
+import Faq from '../components/Faq.astro';
+import { faqMain } from '../data/faq';
+import { site } from '../data/site';
+---
+<Base
+  title="Kontakt – domluvte si ukázku"
+  description="Ať už hledáte kompletní řešení, nový software, hardware nebo místo na prodejním portálu, napište nám. Probereme váš provoz a společně najdeme řešení."
+>
+  <section class="dark-shell contact" aria-labelledby="contact-title">
+    <div class="container">
+      <div class="contact__card">
+        <div class="contact__intro">
+          <h1 class="h1 contact__title" id="contact-title">Pojďme vyřešit váš ticketing.</h1>
+          <p class="contact__lead">Ať už hledáte kompletní řešení, nový software, hardware nebo místo na prodejním portálu, napište nám. Probereme váš provoz a společně najdeme řešení, které vám bude dávat smysl.</p>
+          <ul role="list" class="contact__links">
+            <li><a href={site.phoneHref}><span class="cico"><img src="/svg/Frame.svg" alt="" width="22" height="22" /></span>{site.phone}</a></li>
+            <li><a href={`mailto:${site.email}`}><span class="cico"><img src="/svg/Frame-1.svg" alt="" width="22" height="22" /></span>{site.email}</a></li>
+          </ul>
+        </div>
+
+        <form class="cform" action="/api/contact" method="post" novalidate data-contact-form>
+          <div class="cform__grid">
+            <div class="field">
+              <input id="f-company" name="company" type="text" autocomplete="organization" maxlength="160" placeholder=" " />
+              <label for="f-company">Firma</label>
+            </div>
+            <div class="field">
+              <input id="f-name" name="name" type="text" autocomplete="name" required minlength="2" maxlength="120" placeholder=" " />
+              <label for="f-name">Jméno a příjmení <span aria-hidden="true">*</span></label>
+            </div>
+            <div class="field">
+              <input id="f-phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" maxlength="40" pattern="[0-9+()\s\-]{6,40}" placeholder=" " />
+              <label for="f-phone">Tel. číslo</label>
+            </div>
+            <div class="field">
+              <input id="f-email" name="email" type="email" autocomplete="email" required maxlength="200" placeholder=" " />
+              <label for="f-email">Email <span aria-hidden="true">*</span></label>
+            </div>
+            <div class="field field--full">
+              <textarea id="f-message" name="message" rows="4" required minlength="10" maxlength="4000" placeholder=" "></textarea>
+              <label for="f-message">Popište pro co hledáte řešení. <span aria-hidden="true">*</span></label>
+            </div>
+          </div>
+
+          <!-- anti-spam -->
+          <div class="hp" aria-hidden="true">
+            <label for="f-website">Nevyplňujte</label>
+            <input id="f-website" name="website" type="text" tabindex="-1" autocomplete="off" />
+          </div>
+          <input type="hidden" name="ts" value="" data-ts />
+
+          <label class="consent">
+            <input type="checkbox" name="consent" value="1" required />
+            <span>Odesláním formuláře souhlasím se zpracováním svých osobních údajů v souladu s evropským nařízením <a href="/gdpr">GDPR</a>.</span>
+          </label>
+
+          <button class="btn btn--block cform__submit" type="submit">Odeslat</button>
+          <p class="cform__status" role="status" aria-live="polite" data-form-status></p>
+        </form>
+      </div>
+    </div>
+
+    <LogoMarquee />
+    <div class="contact__spacer"></div>
+  </section>
+
+  <div class="sheet">
+    <Faq items={faqMain} moreLink />
+  </div>
+</Base>
+
+<script>
+  const form = document.querySelector<HTMLFormElement>('[data-contact-form]');
+  const status = document.querySelector<HTMLElement>('[data-form-status]');
+  const ts = form?.querySelector<HTMLInputElement>('[data-ts]');
+  if (ts) ts.value = String(Date.now());
+
+  const say = (msg: string, kind: 'ok' | 'err' | '' = '') => {
+    if (!status) return;
+    status.textContent = msg;
+    status.dataset.kind = kind;
+  };
+
+  const qs = new URLSearchParams(location.search);
+  if (qs.get('odeslano') === '1') say('Děkujeme, zpráva byla odeslána. Ozveme se vám co nejdříve.', 'ok');
+  if (qs.get('chyba') === '1') say('Zprávu se nepodařilo odeslat. Zkontrolujte prosím pole nebo nám napište na info@cliqplace.cz.', 'err');
+
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    form.querySelectorAll('.field, .consent').forEach((f) => f.classList.remove('is-invalid'));
+    if (!form.checkValidity()) {
+      const invalid = Array.from(form.querySelectorAll<HTMLInputElement>('input, textarea')).filter((el) => !el.checkValidity());
+      invalid.forEach((el) => el.closest('.field, .consent')?.classList.add('is-invalid'));
+      invalid[0]?.focus();
+      say('Zkontrolujte prosím označená pole. Jméno, e-mail, popis a souhlas jsou povinné.', 'err');
+      return;
+    }
+    const btn = form.querySelector<HTMLButtonElement>('button[type=submit]');
+    btn?.setAttribute('disabled', '');
+    say('Odesíláme…');
+    try {
+      const data = Object.fromEntries(new FormData(form).entries());
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify(data),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (res.ok) {
+        form.reset();
+        if (ts) ts.value = String(Date.now());
+        say('Děkujeme, zpráva byla odeslána. Ozveme se vám co nejdříve.', 'ok');
+      } else {
+        say(json.error || 'Zprávu se nepodařilo odeslat. Napište nám prosím na info@cliqplace.cz.', 'err');
+      }
+    } catch {
+      say('Zprávu se nepodařilo odeslat. Napište nám prosím na info@cliqplace.cz.', 'err');
+    } finally {
+      btn?.removeAttribute('disabled');
+    }
+  });
+</script>
+
+<style>
+  .contact { padding-top: calc(var(--header-h) + clamp(1rem, 0.5rem + 2vw, 2rem)); }
+  .contact::before {
+    background: radial-gradient(ellipse 55% 60% at 50% 40%, rgba(76, 140, 84, 0.6), transparent 70%);
+  }
+  .contact__card {
+    display: grid; gap: 2.5rem;
+    padding: clamp(1.75rem, 1rem + 3vw, 3.5rem) clamp(1.25rem, 0.5rem + 3.5vw, 3.5rem);
+    border-radius: var(--radius-xl);
+    background: linear-gradient(160deg, rgba(43, 72, 52, 0.55), rgba(12, 20, 18, 0.35));
+    border: 1px solid rgba(255,255,255,0.12);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+    backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  }
+  .contact__title { max-width: 11ch; margin-bottom: 1.5rem; }
+  .contact__lead { max-width: 28rem; color: rgba(255,255,255,0.9); }
+  .contact__links { display: grid; gap: 1rem; margin-top: 2rem; }
+  .contact__links a { display: inline-flex; align-items: center; gap: 0.875rem; }
+  .contact__links a:hover { color: var(--c-lime); }
+  .cico { display: grid; place-items: center; width: 2.125rem; height: 2.125rem; border-radius: 0.5rem; background: linear-gradient(180deg, #2c4633, #1b2c21); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.18); }
+  .cico img { width: 1rem; height: 1rem; }
+
+  .cform__grid { display: grid; gap: 1.75rem 1.25rem; }
+  .field { position: relative; }
+  .field input, .field textarea {
+    width: 100%; background: transparent; border: 0; border-bottom: 1px solid rgba(255,255,255,0.7);
+    padding: 1.6rem 0 0.6rem; color: #fff; font-size: 1rem; border-radius: 0; outline: none;
+    transition: border-color 0.2s;
+  }
+  .field textarea { resize: vertical; min-height: 6.5rem; }
+  .field label {
+    position: absolute; left: 0; top: 1.6rem; color: rgba(255,255,255,0.72); pointer-events: none;
+    transform-origin: left top; transition: transform 0.2s var(--ease-out), color 0.2s;
+  }
+  .field input:focus, .field textarea:focus { border-bottom-color: var(--c-lime); }
+  .field input:focus-visible, .field textarea:focus-visible { box-shadow: 0 1px 0 0 var(--c-lime); }
+  .field input:focus + label, .field input:not(:placeholder-shown) + label,
+  .field textarea:focus + label, .field textarea:not(:placeholder-shown) + label { transform: translateY(-1.35rem) scale(0.8); color: var(--c-lime); }
+  .field.is-invalid input, .field.is-invalid textarea { border-bottom-color: #ff9c9c; }
+  .field.is-invalid label { color: #ffb4b4; }
+
+  .hp { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+
+  .consent { display: flex; gap: 0.75rem; align-items: flex-start; margin: 1.75rem 0 1.5rem; font-size: 0.8125rem; color: rgba(255,255,255,0.85); cursor: pointer; }
+  .consent input { flex: none; width: 1.125rem; height: 1.125rem; margin-top: 0.1rem; accent-color: var(--c-lime); cursor: pointer; }
+  .consent a { text-decoration: underline; text-underline-offset: 2px; }
+  .consent.is-invalid span { color: #ffb4b4; }
+  .cform__submit { min-height: 3.25rem; }
+  .cform__submit[disabled] { opacity: 0.6; pointer-events: none; }
+  .cform__status { margin-top: 1rem; min-height: 1.5rem; font-size: 0.9375rem; }
+  .cform__status[data-kind='ok'] { color: var(--c-lime); }
+  .cform__status[data-kind='err'] { color: #ffb4b4; }
+
+  .contact__spacer { height: var(--radius-xl); }
+
+  @media (min-width: 640px) {
+    .cform__grid { grid-template-columns: 1fr 1fr; }
+    .field--full { grid-column: 1 / -1; }
+  }
+  @media (min-width: 1024px) {
+    .contact__card { grid-template-columns: minmax(0, 0.9fr) minmax(0, 1fr); gap: clamp(3rem, 2rem + 4vw, 8rem); align-items: start; }
+  }
+</style>

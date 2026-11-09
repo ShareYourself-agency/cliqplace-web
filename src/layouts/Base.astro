@@ -1,0 +1,63 @@
+---
+import '../styles/global.css';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+
+interface Props {
+  title: string;
+  description: string;
+  headerTheme?: 'dark' | 'light';
+  noindex?: boolean;
+}
+const { title, description, headerTheme = 'dark', noindex = false } = Astro.props;
+const canonical = new URL(Astro.url.pathname.replace(/\/$/, '') || '/', Astro.site);
+const fullTitle = title.includes('Cliqplace') ? title : `${title} | Cliqplace`;
+const ogImage = new URL('/og-image.jpg', Astro.site);
+---
+<!doctype html>
+<html lang="cs">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    {noindex && <meta name="robots" content="noindex" />}
+    <meta name="theme-color" content="#0c1412" />
+    <meta name="color-scheme" content="light" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="preload" href="/fonts/InterTight-var.woff2" as="font" type="font/woff2" crossorigin />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="cs_CZ" />
+    <meta property="og:site_name" content="Cliqplace" />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <script is:inline>document.documentElement.classList.add('js');</script>
+    <script type="application/ld+json" set:html={JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'Organization',
+      name: 'Cliqplace s.r.o.',
+      url: 'https://www.cliqplace.cz',
+      logo: 'https://www.cliqplace.cz/apple-touch-icon.png',
+      email: 'info@cliqplace.cz',
+      telephone: '+420772000020',
+      taxID: 'CZ03485285',
+      address: { '@type': 'PostalAddress', streetAddress: 'Nad Pískovnou 1450/5', postalCode: '140 00', addressLocality: 'Praha 4', addressCountry: 'CZ' },
+    })} />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Přeskočit na obsah</a>
+    <Header theme={headerTheme} />
+    <main id="main">
+      <slot />
+    </main>
+    <Footer />
+    <script>
+      import '../scripts/main.ts';
+    </script>
+  </body>
+</html>

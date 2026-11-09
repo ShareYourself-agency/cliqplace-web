@@ -1,0 +1,20 @@
+---
+import Base from '../layouts/Base.astro';
+---
+<Base title="Stránka nenalezena" description="Tato stránka neexistuje." noindex>
+  <section class="dark-shell nf">
+    <div class="container nf__inner">
+      <p class="nf__code text-lime">404</p>
+      <h1 class="h1">Tahle vstupenka nikam nevede.</h1>
+      <p class="lead">Stránka, kterou hledáte, neexistuje nebo byla přesunuta.</p>
+      <div class="btn-row"><a class="btn" href="/">Zpět na úvod</a><a class="btn btn--ghost" href="/kontakt">Kontakt</a></div>
+    </div>
+  </section>
+</Base>
+<style>
+  .nf { min-height: 100svh; display: grid; align-items: center; padding-block: calc(var(--header-h) + 3rem) 4rem; }
+  .nf__inner { display: grid; justify-items: center; text-align: center; gap: 1.25rem; }
+  .nf__code { font-size: clamp(4rem, 3rem + 6vw, 8rem); font-weight: 600; letter-spacing: -0.05em; line-height: 1; }
+  .nf .h1 { max-width: 16ch; }
+  .nf .lead { color: rgba(255,255,255,0.85); }
+</style>

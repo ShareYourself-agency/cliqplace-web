@@ -1,0 +1,383 @@
+---
+import { Image } from 'astro:assets';
+import Base from '../layouts/Base.astro';
+import LogoMarquee from '../components/LogoMarquee.astro';
+import Reviews from '../components/Reviews.astro';
+import FinalCta from '../components/FinalCta.astro';
+import Faq from '../components/Faq.astro';
+import { faqMain } from '../data/faq';
+
+import network from '../assets/img/neon-green-glass-network.png';
+import connector from '../assets/img/neon-green-glass-pipeline-connector.png';
+import imgTickets from '../assets/img/neon-green-glass-tickets.png';
+import imgEmail from '../assets/img/neon-glass-verified-email-icon.png';
+import imgCoins from '../assets/img/glossy-emerald-glass-coins.png';
+import imgSummary from '../assets/img/neon-glass-ticket-summary-card.png';
+import imgCursor from '../assets/img/neon-glass-cursor-icon.png';
+import imgHeadphones from '../assets/img/neon-glass-over-ear-headphones.png';
+
+const stats = [
+  { to: 200, suffix: '+', label: 'stálých klientů' },
+  { to: 70, suffix: ' mil.+', label: 'prodaných vstupenek' },
+  { to: 15, suffix: ' let', label: 'na trhu' },
+  { to: 70, suffix: ' mil.+', label: 'odbavených návštěvníků' },
+];
+
+const pillars = [
+  { tag: 'Software', title: 'Všechno pod kontrolou se systémem Entradio.', text: 'Správa akcí, sálů, prodeje, rezervací, vstupenek, zákazníků, voucherů a zboží.', href: '/software', cta: 'Prozkoumat software' },
+  { tag: 'Hardware', title: 'Od pokladny až ke vstupu.', text: 'Skenery, tiskárny, platební terminály, kiosky, turnikety, pokladní PC, samoobslužné pokladny, čtečky vstupenek, výdejní boxy.', href: '/hardware', cta: 'Prozkoumat hardware' },
+  { tag: 'Portál', title: 'Místo, kde se návštěvník dostane ke své vstupence.', text: 'Online prodej prostřednictvím mytickets.vip nebo white-label řešení pod vlastní značkou.', href: '/portal', cta: 'Prozkoumat portál' },
+];
+
+const audiences = [
+  { icon: 'divadla-kina', title: 'Divadla a kina', text: 'Prodej podle sálu, místa a představení. Abonmá, slevy i premiéry v jednom systému.' },
+  { icon: 'kluby-koncerty', title: 'Kluby a koncerty', text: 'Rychlý předprodej, guest listy a plynulé odbavení i při vyprodaném sále.' },
+  { icon: 'festivaly', title: 'Festivaly', text: 'Vícedenní vstupenky, náramky a tisíce návštěvníků u vstupu bez front.' },
+  { icon: 'sportoviste', title: 'Sportoviště', text: 'Permanentky, sezónní vstupenky a turnikety propojené přímo s prodejem.' },
+  { icon: 'muzea-galerie', title: 'Muzea a galerie', text: 'Časové sloty, kombinované vstupné a prodej zboží na pokladně i online.' },
+  { icon: 'zoo-aquaparky', title: 'Zoo a aquaparky', text: 'Samoobslužné kiosky, rodinné vstupné a turnikety pro tisíce lidí denně.' },
+  { icon: 'konference', title: 'Konference', text: 'Registrace, jmenovky a odbavení účastníků, i pro uzavřené akce na pozvánku.' },
+];
+
+const steps = [
+  { img: 'krok1', title: 'Vytvoříte akci', text: 'Nastavíte termín, sál, ceny, kapacitu a typy vstupenek v systému Entradio.' },
+  { img: 'krok2', title: 'Spustíte prodej', text: 'Na vlastním webu, přes white-label nebo prodejní portál. Zákazník nakoupí kdykoliv.' },
+  { img: 'krok3', title: 'Vstupenka je u zákazníka', text: 'Platba proběhne online a vstupenka s QR kódem dorazí automaticky.' },
+  { img: 'krok4', title: 'Odbavíte návštěvníky', text: 'Na místě použijete skenery, terminály a další hardware propojený se systémem.' },
+  { img: 'krok5', title: 'Všechno máte pod kontrolou', text: 'Prodeje, návštěvnost, zákaznická data i provoz vidíte na jednom místě.' },
+];
+---
+<Base
+  title="Cliqplace – Všechno pro prodej vstupenek na jednom místě"
+  description="Software, hardware, prodejní portál a další služby pro prodej vstupenek propojené v jednom řešení. Od prvního prodaného lístku až po posledního návštěvníka u vstupu."
+>
+  <!-- ============================================================ HERO -->
+  <section class="dark-shell home-hero" aria-labelledby="hero-title">
+    <div class="container home-hero__inner">
+      <div class="hero-cards" aria-hidden="true">
+        <img class="hero-card hero-card--sw" src="/svg/software-okynko.svg" alt="" width="293" height="209" />
+        <img class="hero-card hero-card--hw" src="/svg/hardware-okynko.svg" alt="" width="293" height="209" />
+        <img class="hero-card hero-card--pt" src="/svg/portal-okynko.svg" alt="" width="293" height="209" />
+      </div>
+
+      <div class="home-hero__copy">
+        <h1 class="h1 home-hero__title" id="hero-title">Všechno pro prodej vstupenek. <span class="text-lime">Na&nbsp;jednom místě.</span></h1>
+        <p class="lead home-hero__lead">Software, hardware, prodejní portál a další služby propojené v jednom řešení. Od prvního prodaného lístku až po posledního návštěvníka u vstupu.</p>
+        <div class="btn-row">
+          <a class="btn" href="/kontakt">Domluvit ukázku</a>
+          <a class="btn btn--ghost" href="#jak-to-funguje">Jak to funguje?</a>
+        </div>
+      </div>
+    </div>
+
+    <LogoMarquee />
+
+    <div class="container">
+      <ul role="list" class="stats">
+        {stats.map((s) => (
+          <li class="stat" data-count-to={s.to}>
+            <p class="stat__num"><span data-count-value>{s.to}</span>{s.suffix}</p>
+            <p class="stat__label">{s.label}</p>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <div class="sheet">
+    <!-- ============================================================ PILLARS -->
+    <section class="section pillars" aria-labelledby="pillars-title">
+      <div class="container">
+        <h2 class="h2 center pillars__title" id="pillars-title">Cliqplace. Jeden partner.<br /> Celý ticketing.</h2>
+        <div class="pillars__stage">
+          <Image class="pillars__network" src={network} alt="" widths={[700, 1324]} sizes="(min-width: 1024px) 1324px, 100vw" loading="lazy" />
+          <ul role="list" class="pillars__grid">
+            {pillars.map((p, i) => (
+              <li class="pillar" data-reveal style={`--d:${i * 0.1}s; --r:${[-2.2, 1.6, 1.2][i]}deg`}>
+                <span class="pillar__tag">{p.tag}</span>
+                <h3 class="h3 pillar__title">{p.title}</h3>
+                <p class="pillar__text">{p.text}</p>
+                <a class="btn btn--soft pillar__btn" href={p.href}>{p.cta}</a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ AUDIENCES -->
+    <section class="section section--tight-top audiences" aria-labelledby="audiences-title">
+      <div class="container">
+        <h2 class="h2 center audiences__title" id="audiences-title">Pro koho se Cliqplace hodí?</h2>
+        <ul role="list" class="audiences__grid">
+          {audiences.map((a, i) => (
+            <li class="audience card-sage" data-reveal style={`--d:${(i % 4) * 0.06}s`}>
+              <span class="icon-tile"><img src={`/svg/${a.icon}.svg`} alt="" width="33" height="33" loading="lazy" /></span>
+              <h3 class="h4 audience__title">{a.title}</h3>
+              <p class="audience__text">{a.text}</p>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+
+    <!-- ============================================================ HOW IT WORKS (stacking) -->
+    <section class="section section--tight-top how" id="jak-to-funguje" aria-labelledby="how-title">
+      <div class="container how__container">
+        <h2 class="h2 center how__title" id="how-title">Jak to funguje?</h2>
+        <ol role="list" class="how__list">
+          {steps.map((s, i) => (
+            <li class="how__item" style={`--i:${i}`}>
+              <article class="how-card">
+                <img class="how-card__img" src={`/svg/${s.img}.svg`} alt="" width="160" height="104" loading="lazy" />
+                <div class="how-card__body">
+                  <h3 class="how-card__title">{s.title}</h3>
+                  <p class="how-card__text">{s.text}</p>
+                </div>
+                <span class="how-card__num" aria-hidden="true">{i + 1}</span>
+              </article>
+            </li>
+          ))}
+          <li class="how__item how__item--cta" style={`--i:${steps.length}`}>
+            <div class="how-cta">
+              <p class="how-cta__text">Začněte spolupracovat s&nbsp;Cliqplace ještě dnes</p>
+              <Image class="how-cta__img" src={connector} alt="" widths={[200, 380]} sizes="190px" loading="lazy" />
+              <a class="btn btn--ghost-dark how-cta__btn" href="/kontakt">Domluvit ukázku</a>
+            </div>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- ============================================================ BUILT AROUND YOU -->
+    <section class="section section--tight-top around" aria-labelledby="around-title">
+      <div class="container">
+        <div class="around__box">
+          <svg class="around__cable" data-cable viewBox="0 0 1000 1800" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+            <defs>
+              <filter id="neon-glow" x="-50%" y="-10%" width="200%" height="120%">
+                <feGaussianBlur stdDeviation="7" result="b1" />
+                <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="b2" />
+                <feMerge><feMergeNode in="b1" /><feMergeNode in="b1" /><feMergeNode in="b2" /><feMergeNode in="SourceGraphic" /></feMerge>
+              </filter>
+              <linearGradient id="pipe-glass" x1="0" x2="1">
+                <stop offset="0" stop-color="#fff" stop-opacity="0.02" />
+                <stop offset="0.5" stop-color="#cfffbf" stop-opacity="0.09" />
+                <stop offset="1" stop-color="#fff" stop-opacity="0.02" />
+              </linearGradient>
+            </defs>
+            <g class="around__pipe" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path stroke="url(#pipe-glass)" stroke-width="34" d="M560 -20 C 560 120, 470 160, 470 300 S 560 480, 560 640 S 440 820, 440 980 S 560 1160, 560 1320 S 480 1520, 500 1820" />
+              <path stroke="rgba(210,255,190,0.16)" stroke-width="2" d="M560 -20 C 560 120, 470 160, 470 300 S 560 480, 560 640 S 440 820, 440 980 S 560 1160, 560 1320 S 480 1520, 500 1820" />
+              <path stroke="url(#pipe-glass)" stroke-width="22" d="M200 -20 C 200 160, 330 200, 470 300" opacity="0.7" />
+              <path stroke="url(#pipe-glass)" stroke-width="22" d="M440 980 C 650 1000, 760 900, 820 760 S 900 560, 1020 520" opacity="0.7" />
+            </g>
+            <g fill="none" stroke-linecap="round" filter="url(#neon-glow)">
+              <path data-cable-path stroke="#7dff5c" stroke-width="3.5" d="M560 -20 C 560 120, 470 160, 470 300 S 560 480, 560 640 S 440 820, 440 980 S 560 1160, 560 1320 S 480 1520, 500 1820" />
+            </g>
+          </svg>
+
+          <h2 class="h2 center around__title" id="around-title">Ticketing postavený<br /> kolem vás. Ne&nbsp;naopak.</h2>
+
+          <div class="around__grid">
+            <div class="around__col">
+              <article class="glass" data-reveal>
+                <h3 class="glass__title">Vaše značka zůstává vpředu</h3>
+                <p class="glass__text">Nákup probíhá pod vaším jménem, ne&nbsp;pod cizí platformou.</p>
+                <Image class="glass__img glass__img--end" src={imgTickets} alt="" widths={[280, 562]} sizes="(min-width: 900px) 280px, 60vw" loading="lazy" />
+              </article>
+              <article class="glass" data-reveal>
+                <h3 class="glass__title">Peníze z předprodeje<br /> bez zbytečného čekání</h3>
+                <p class="glass__text">Tržby vám chodí na účet rovnou, i během předprodeje. Neblokujeme je.</p>
+                <Image class="glass__img glass__img--end" src={imgCoins} alt="" widths={[240, 477]} sizes="(min-width: 900px) 240px, 55vw" loading="lazy" />
+              </article>
+              <article class="glass" data-reveal>
+                <h3 class="glass__title">Jednoduché od prvního kliknutí</h3>
+                <p class="glass__text">Nastavení i každodenní používání zvládnete bez zaškolení.</p>
+                <Image class="glass__img glass__img--end" src={imgCursor} alt="" widths={[280, 554]} sizes="(min-width: 900px) 280px, 60vw" loading="lazy" />
+              </article>
+            </div>
+            <div class="around__col around__col--offset">
+              <article class="glass glass--img-top" data-reveal>
+                <Image class="glass__img glass__img--end" src={imgEmail} alt="" widths={[270, 525]} sizes="(min-width: 900px) 270px, 60vw" loading="lazy" />
+                <h3 class="glass__title">Vaši zákazníci. Vaše data.</h3>
+                <p class="glass__text">E-maily nebo nákupní chování zůstávají jen u vás.</p>
+              </article>
+              <article class="glass glass--img-top" data-reveal>
+                <Image class="glass__img glass__img--end" src={imgSummary} alt="" widths={[340, 672]} sizes="(min-width: 900px) 340px, 70vw" loading="lazy" />
+                <h3 class="glass__title">Žádná překvapení v ceně</h3>
+                <p class="glass__text">Zákazník vidí finální cenu hned, bez žádných skrytých poplatků.</p>
+              </article>
+              <article class="glass glass--img-top" data-reveal>
+                <Image class="glass__img glass__img--end" src={imgHeadphones} alt="" widths={[270, 540]} sizes="(min-width: 900px) 270px, 60vw" loading="lazy" />
+                <h3 class="glass__title">Jsme tu, když nás potřebujete</h3>
+                <p class="glass__text">Zákaznická podpora 7 dní v týdnu.</p>
+              </article>
+            </div>
+          </div>
+
+          <div class="around__cta"><a class="btn" href="/kontakt">Domluvit ukázku</a></div>
+        </div>
+      </div>
+    </section>
+
+    <Reviews />
+    <FinalCta />
+    <Faq items={faqMain} moreLink />
+  </div>
+</Base>
+
+<style>
+  /* ---------------- hero ---------------- */
+  .home-hero { padding-top: calc(var(--header-h) + clamp(1.5rem, 0.5rem + 3vw, 2.5rem)); padding-bottom: calc(var(--radius-xl) + clamp(3rem, 2rem + 3vw, 5rem)); }
+  .home-hero__inner { display: flex; flex-direction: column; align-items: center; }
+  .home-hero__copy { display: grid; justify-items: center; text-align: center; gap: 1.5rem; }
+  .home-hero__title { max-width: 17ch; }
+  .home-hero__title .text-lime { display: block; }
+  .home-hero__lead { max-width: 36rem; color: rgba(255,255,255,0.92); }
+  .home-hero .btn-row { margin-top: 0.5rem; }
+
+  .hero-cards { position: relative; width: 100%; max-width: 40rem; order: 2; height: clamp(13rem, 52vw, 19rem); margin-top: 2.5rem; }
+  .hero-card {
+    position: absolute; width: min(56%, 18.3rem); height: auto;
+    filter: drop-shadow(0 18px 30px rgba(0,0,0,0.45));
+    animation: levitate 6s ease-in-out infinite;
+  }
+  .hero-card--sw { left: -2%; top: 30%; --rot: -7deg; animation-delay: -1.2s; }
+  .hero-card--pt { right: -2%; top: 30%; --rot: 7deg; animation-delay: -3.4s; }
+  .hero-card--hw { left: 50%; top: 0; margin-left: calc(min(56%, 18.3rem) / -2); z-index: 1; --rot: 0deg; }
+  @keyframes levitate {
+    0%, 100% { transform: translateY(0) rotate(var(--rot)); }
+    50% { transform: translateY(-14px) rotate(calc(var(--rot) * 0.6)); }
+  }
+
+  @media (min-width: 1024px) {
+    .home-hero { padding-top: calc(var(--header-h) + 1.75rem); }
+    .hero-cards { order: 0; height: 16.5rem; margin: 0 0 -3.75rem; max-width: 70rem; }
+    .hero-card { width: 18.3rem; }
+    .hero-card--sw { left: 3%; top: 3rem; --rot: 0deg; }
+    .hero-card--pt { right: 3%; top: 3rem; --rot: 0deg; }
+    .hero-card--hw { top: 0; margin-left: -9.15rem; }
+    .home-hero__copy { position: relative; z-index: 2; }
+  }
+  @media (min-width: 1280px) {
+    .hero-card--sw { left: 1%; }
+    .hero-card--pt { right: 1%; }
+  }
+
+  /* stats */
+  .stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2.25rem 1rem; text-align: center; }
+  .stat__num { font-size: clamp(2.5rem, 1.6rem + 3.6vw, 4rem); font-weight: 600; letter-spacing: -0.04em; line-height: 1; color: var(--c-lime); white-space: nowrap; }
+  .stat__label { margin-top: 0.6rem; color: rgba(255,255,255,0.9); }
+  @media (min-width: 900px) { .stats { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+
+  /* ---------------- pillars ---------------- */
+  .pillars__title { margin-bottom: clamp(2.5rem, 1.5rem + 3vw, 4rem); }
+  .pillars__stage { position: relative; }
+  .pillars__network {
+    display: none; position: absolute; left: 50%; top: 52%; width: 112%; max-width: none;
+    transform: translate(-50%, -50%); pointer-events: none;
+  }
+  .pillars__grid { position: relative; display: grid; gap: 1.25rem; max-width: 26rem; margin-inline: auto; }
+  .pillar {
+    display: flex; flex-direction: column; align-items: center; text-align: center;
+    padding: 1.5rem 1.5rem 1.75rem; border-radius: var(--radius);
+    background: linear-gradient(180deg, rgba(231,238,223,0.78), rgba(231,238,223,0.62));
+    border: 1px solid rgba(54,93,63,0.32);
+    backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px);
+    box-shadow: 0 30px 50px -35px rgba(13,21,19,0.45), inset 0 1px 0 rgba(255,255,255,0.7);
+  }
+  .pillar__tag {
+    font-size: 0.75rem; padding: 0.3rem 0.75rem; border-radius: 99px; margin-bottom: 1.1rem;
+    background: rgba(255,255,255,0.45); border: 1px dashed rgba(54,93,63,0.35); color: var(--c-text);
+  }
+  .pillar__title { margin-bottom: 0.75rem; max-width: 17ch; }
+  .pillar__text { color: var(--c-text); margin-bottom: 1.5rem; max-width: 30ch; }
+  .pillar__btn { margin-top: auto; }
+  @media (min-width: 900px) {
+    .pillars__network { display: block; }
+    .pillars__grid { grid-template-columns: repeat(3, minmax(0, 1fr)); max-width: 70rem; gap: clamp(2rem, 1rem + 3vw, 4.5rem); }
+    .pillar { transform: rotate(var(--r)); }
+    .js .pillar[data-reveal] { transform: translateY(24px) rotate(var(--r)); }
+    .js .pillar[data-reveal].is-in { transform: rotate(var(--r)); }
+    .pillar:nth-child(2) { margin-top: -0.5rem; }
+  }
+
+  /* ---------------- audiences ---------------- */
+  .audiences__title { margin-bottom: clamp(2.25rem, 1.5rem + 2.5vw, 3.5rem); }
+  .audiences__grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; }
+  .audience { flex: 1 1 100%; padding: 1.5rem 1.5rem 1.75rem; display: grid; align-content: start; gap: 0.4rem; transition: transform 0.35s var(--ease-out), box-shadow 0.35s var(--ease-out); }
+  .audience:hover { transform: translateY(-4px); box-shadow: 0 20px 34px -24px rgba(13,21,19,0.4); }
+  .audience .icon-tile { margin-bottom: 1.25rem; }
+  .audience__text { color: var(--c-text); max-width: 28ch; }
+  @media (min-width: 640px) { .audience { flex-basis: calc(50% - 0.5rem); flex-grow: 0; } }
+  @media (min-width: 1024px) { .audience { flex-basis: calc(25% - 0.75rem); } }
+
+  /* ---------------- how it works: stacking cards ---------------- */
+  .how__title { margin-bottom: clamp(2.25rem, 1.5rem + 2.5vw, 3.5rem); }
+  .how__list { max-width: 42rem; margin-inline: auto; display: grid; gap: 0.625rem; }
+  .how__item { position: sticky; top: calc(var(--header-h) + 1rem + var(--i) * 0.75rem); }
+  .how-card {
+    position: relative; display: grid; grid-template-columns: auto 1fr; align-items: center; gap: clamp(0.875rem, 0.5rem + 1.5vw, 1.25rem);
+    padding: 0.625rem; padding-right: 3.25rem;
+    background: var(--c-sage); border: 1px solid var(--c-line); border-radius: var(--radius);
+    box-shadow: 0 -12px 30px -18px rgba(13,21,19,0.35);
+  }
+  .how-card__img { width: clamp(5.5rem, 3.5rem + 8vw, 10rem); height: auto; border-radius: 0.875rem; }
+  .how-card__title { font-size: clamp(1.125rem, 1rem + 0.6vw, 1.5rem); letter-spacing: -0.03em; margin-bottom: 0.4rem; }
+  .how-card__text { color: var(--c-text); font-size: clamp(0.875rem, 0.82rem + 0.25vw, 1rem); line-height: 1.4; }
+  .how-card__num {
+    position: absolute; top: 0.75rem; right: 0.75rem;
+    display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: 50%;
+    color: #fff; font-size: 0.9375rem; font-weight: 500;
+    background: radial-gradient(circle at 35% 30%, #8fd28a, #3c7b45 70%);
+    box-shadow: inset 0 1px 1px rgba(255,255,255,0.6), 0 2px 5px rgba(13,21,19,0.25);
+  }
+  .how-cta {
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem 1.25rem;
+    padding: 1.5rem; border-radius: var(--radius); background: var(--c-lime-2);
+    box-shadow: 0 -12px 30px -18px rgba(13,21,19,0.35);
+  }
+  .how-cta__text { font-size: clamp(1.125rem, 1rem + 0.5vw, 1.375rem); font-weight: 600; letter-spacing: -0.025em; line-height: 1.25; max-width: 15ch; }
+  .how-cta__img { width: 9.5rem; height: auto; display: none; }
+  .how-cta__btn { min-height: 2.75rem; }
+  @media (min-width: 640px) { .how-cta__img { display: block; } }
+  @media (max-width: 639.98px) {
+    .how-card { grid-template-columns: 1fr; padding: 0.75rem 0.75rem 1.25rem; }
+    .how-card__img { width: 100%; max-height: 9rem; object-fit: contain; background: #fff; }
+    .how-card__body { padding-inline: 0.5rem; }
+  }
+
+  /* ---------------- built around you ---------------- */
+  .around__box {
+    position: relative; isolation: isolate; overflow: hidden;
+    border-radius: var(--radius-xl); color: #fff;
+    padding: clamp(3.5rem, 2.5rem + 3.5vw, 5.5rem) clamp(1rem, 0.25rem + 3.5vw, 4rem) clamp(3rem, 2rem + 3vw, 5rem);
+    background: linear-gradient(180deg, #386041 0%, #253f2f 45%, #14211a 100%);
+  }
+  .around__cable { position: absolute; inset: 0; width: 100%; height: 100%; z-index: -1; }
+  .around__title { margin-bottom: clamp(2.5rem, 2rem + 2vw, 3.75rem); }
+  .around__grid { display: grid; gap: 1rem; max-width: 70rem; margin-inline: auto; }
+  .around__col { display: grid; gap: 1rem; align-content: start; }
+  .glass {
+    position: relative; display: flex; flex-direction: column; overflow: hidden;
+    min-height: clamp(17rem, 14rem + 8vw, 21rem);
+    padding: clamp(1.5rem, 1.2rem + 1vw, 1.9rem);
+    border-radius: var(--radius-l);
+    background: linear-gradient(160deg, rgba(48,80,58,0.62), rgba(24,40,31,0.55));
+    border: 1px solid rgba(255,255,255,0.1);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), 0 30px 60px -40px rgba(0,0,0,0.7);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  }
+  .glass__title { font-size: clamp(1.25rem, 1.15rem + 0.4vw, 1.4rem); letter-spacing: -0.025em; line-height: 1.2; margin-bottom: 0.5rem; }
+  .glass__text { color: rgba(255,255,255,0.82); font-size: 0.9375rem; max-width: 26ch; }
+  .glass__img { width: auto; max-width: 82%; max-height: 15.5rem; object-fit: contain; filter: drop-shadow(0 0 20px rgba(93,255,74,0.25)); }
+  .glass__img--end { align-self: flex-end; margin-top: auto; padding-top: 1rem; }
+  .glass--img-top .glass__img { margin-top: 0; padding-top: 0; margin-bottom: auto; padding-bottom: 1rem; }
+  .around__cta { display: flex; justify-content: center; margin-top: clamp(2.5rem, 2rem + 2vw, 3.5rem); }
+  @media (min-width: 900px) {
+    .around__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem; }
+    .around__col { gap: 1.25rem; }
+    .around__col--offset { padding-top: 3.75rem; }
+  }
+</style>

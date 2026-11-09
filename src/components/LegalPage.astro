@@ -1,0 +1,23 @@
+---
+import Base from '../layouts/Base.astro';
+interface Props { title: string; description: string }
+const { title, description } = Astro.props;
+---
+<Base title={title} description={description} headerTheme="light">
+  <article class="legal container">
+    <h1 class="h2 legal__title">{title}</h1>
+    <div class="legal__body"><slot /></div>
+  </article>
+</Base>
+
+<style>
+  .legal { padding-top: calc(var(--header-h) + clamp(2rem, 1rem + 4vw, 4.5rem)); padding-bottom: var(--section-y); max-width: 50rem; }
+  .legal__title { margin-bottom: 2rem; }
+  .legal__body { color: var(--c-text); line-height: 1.65; }
+  .legal__body :global(h2) { color: var(--c-ink); font-size: 1.375rem; letter-spacing: -0.02em; margin: 2.25rem 0 0.75rem; }
+  .legal__body :global(h3) { color: var(--c-ink); font-size: 1.125rem; letter-spacing: -0.015em; margin: 1.5rem 0 0.5rem; }
+  .legal__body :global(p), .legal__body :global(ul), .legal__body :global(ol) { margin-bottom: 0.9rem; }
+  .legal__body :global(ul), .legal__body :global(ol) { padding-left: 1.25rem; }
+  .legal__body :global(li) { margin-bottom: 0.35rem; }
+  .legal__body :global(a) { color: var(--c-green); text-decoration: underline; text-underline-offset: 2px; }
+</style>

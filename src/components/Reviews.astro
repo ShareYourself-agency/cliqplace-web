@@ -1,0 +1,72 @@
+---
+import { reviews } from '../data/reviews';
+interface Props { title?: string }
+const { title = 'Příběhy našich klientů' } = Astro.props;
+const n = reviews.length;
+---
+<section class="reviews section" aria-labelledby="reviews-title">
+  <div class="container">
+    <h2 class="h2 center reviews__title" id="reviews-title">{title}</h2>
+
+    <div class="reviews__carousel" data-loop="reviews" data-count={n} data-interval="7000" aria-roledescription="carousel" aria-label="Reference klientů">
+      <div class="reviews__stage" data-loop-stage>
+        {reviews.map((r, i) => (
+          <article class="review" data-loop-item={i} aria-roledescription="slide" aria-label={`${i + 1} z ${n}: ${r.name}`}>
+            <header class="review__head">
+              <h3 class="review__name">{r.name}</h3>
+              <span class="review__tag">{r.type}</span>
+            </header>
+            <div class="review__text">
+              {r.text.map((p) => <p>{p}</p>)}
+            </div>
+            {r.person && <p class="review__person">— {r.person}</p>}
+          </article>
+        ))}
+      </div>
+
+      <div class="slidebar">
+        <label class="sr-only" for="reviews-range">Vyberte referenci</label>
+        <input id="reviews-range" class="slidebar__range" type="range" min="0" max={n - 1} step="1" value="0" data-loop-range aria-valuetext={`${reviews[0].name}`} />
+      </div>
+      <p class="sr-only" aria-live="polite" data-loop-live></p>
+    </div>
+  </div>
+</section>
+
+<style>
+  .reviews { overflow: hidden; }
+  .reviews__title { margin-bottom: clamp(2.5rem, 1.5rem + 3vw, 4rem); }
+  .reviews__stage {
+    display: grid; position: relative; touch-action: pan-y;
+    max-width: 30rem; margin-inline: auto;
+  }
+  .review {
+    grid-area: 1 / 1; align-self: center;
+    background: var(--c-sage); border: 1px solid var(--c-line); border-radius: var(--radius);
+    padding: clamp(1.25rem, 1rem + 1vw, 1.75rem);
+    transition: transform 0.7s var(--ease-out), opacity 0.7s var(--ease-out), filter 0.7s var(--ease-out);
+    transform: translateX(0) scale(0.84); opacity: 0; pointer-events: none;
+    box-shadow: 0 20px 50px -30px rgba(13, 21, 19, 0.35);
+    user-select: none;
+  }
+  .review[data-pos='0'] { opacity: 1; transform: none; z-index: 3; pointer-events: auto; user-select: text; }
+  .review[data-pos='-1'], .review[data-pos='1'] { opacity: 0.85; z-index: 2; pointer-events: auto; cursor: pointer; filter: saturate(0.85); }
+  .review[data-pos='-1'] { transform: translateX(-46%) translateY(3%) scale(0.88); }
+  .review[data-pos='1'] { transform: translateX(46%) translateY(3%) scale(0.88); }
+  .review[data-pos='-1'] .review__text, .review[data-pos='1'] .review__text { opacity: 0.55; }
+  .review__head { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.75rem; margin-bottom: 1rem; }
+  .review__name { font-size: 1.375rem; letter-spacing: -0.03em; }
+  .review__tag {
+    font-size: 0.8125rem; color: var(--c-text); padding: 0.25rem 0.625rem; border-radius: 99px;
+    border: 1px solid rgba(54, 93, 63, 0.45); background: rgba(255,255,255,0.35);
+  }
+  .review__text { display: grid; gap: 0.55rem; color: var(--c-text); line-height: 1.5; font-size: 0.975rem; transition: opacity 0.5s; }
+  .review__person { margin-top: 1rem; font-size: 0.875rem; color: var(--c-green); font-weight: 500; }
+
+  .slidebar { max-width: 30rem; margin: clamp(2rem, 1.5rem + 1.5vw, 3rem) auto 0; }
+
+  @media (max-width: 639.98px) {
+    .review[data-pos='-1'] { transform: translateX(-93%) scale(0.9); }
+    .review[data-pos='1'] { transform: translateX(93%) scale(0.9); }
+  }
+</style>

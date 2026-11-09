@@ -1,0 +1,93 @@
+---
+import { site } from '../data/site';
+const year = new Date().getFullYear();
+---
+<footer class="site-footer">
+  <div class="container">
+    <div class="site-footer__grid">
+      <div class="site-footer__brand">
+        <a href="/" aria-label="Cliqplace – úvodní stránka"><img src="/svg/logo.svg" alt="Cliqplace – Where Connections Begin" width="300" height="78" loading="lazy" /></a>
+        <ul role="list" class="site-footer__contact">
+          <li><a href={site.phoneHref}><span class="ico"><img src="/svg/Frame.svg" alt="" width="22" height="22" /></span>{site.phone}</a></li>
+          <li><a href={`mailto:${site.email}`}><span class="ico"><img src="/svg/Frame-1.svg" alt="" width="22" height="22" /></span>{site.email}</a></li>
+        </ul>
+      </div>
+
+      <div class="site-footer__cols">
+        <ul role="list" class="site-footer__col">
+          {site.hours.map(([d, h]) => <li>{d} {h}</li>)}
+          <li>Podpora pro klienty:<br />7 dní v týdnu</li>
+        </ul>
+        <ul role="list" class="site-footer__col">
+          <li>{site.company}</li>
+          <li>IČO: {site.ico}</li>
+          <li>DIČ: {site.dic}</li>
+        </ul>
+        <nav aria-label="Patička – stránky">
+          <ul role="list" class="site-footer__col">
+            <li><a href="/">Homepage</a></li>
+            <li><a href="/software">Software</a></li>
+            <li><a href="/hardware">Hardware</a></li>
+            <li><a href="/portal">Portál</a></li>
+            <li><a href="/kontakt">Kontakt</a></li>
+          </ul>
+        </nav>
+        <nav aria-label="Patička – dokumenty">
+          <ul role="list" class="site-footer__col">
+            <li><a href="/obchodni-podminky">Obchodní podmínky</a></li>
+            <li><a href="/gdpr">GDPR</a></li>
+            <li><a href="/cookies">Cookies</a></li>
+          </ul>
+        </nav>
+      </div>
+    </div>
+
+    <div class="site-footer__bottom">
+      <p>{site.company} © {year} All rights reserved.</p>
+      <p>Navrhnuto a postaveno v České republice</p>
+      <p>Designed by Anna Brabcová, built by <a href="https://www.shareyourself.cz" target="_blank" rel="noopener">Share Yourself</a>.</p>
+    </div>
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    position: relative; overflow: hidden; isolation: isolate;
+    background: var(--c-night); color: #fff;
+    padding-top: clamp(3.5rem, 2.5rem + 3vw, 5rem);
+    font-size: 1rem;
+  }
+  .site-footer::before {
+    content: ''; position: absolute; z-index: -1; left: 50%; bottom: -55%; width: 120%; height: 100%;
+    transform: translateX(-50%);
+    background: radial-gradient(ellipse 50% 50% at 50% 50%, rgba(76, 140, 84, 0.55), transparent 70%);
+  }
+  .site-footer__grid { display: grid; gap: 3rem; }
+  .site-footer__brand img { width: clamp(13rem, 10rem + 8vw, 21.25rem); height: auto; }
+  .site-footer__contact { display: grid; gap: 1rem; margin-top: 2rem; }
+  .site-footer__contact a { display: inline-flex; align-items: center; gap: 0.875rem; }
+  .site-footer__contact a:hover { color: var(--c-lime); }
+  .ico {
+    display: grid; place-items: center; width: 2.125rem; height: 2.125rem; border-radius: 0.5rem;
+    background: linear-gradient(180deg, #2c4633, #1b2c21); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.18);
+  }
+  .ico img { width: 1rem; height: 1rem; }
+  .site-footer__cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2rem 1.5rem; }
+  .site-footer__col { display: grid; gap: 1rem; align-content: start; }
+  .site-footer__col a { transition: color 0.2s; }
+  .site-footer__col a:hover { color: var(--c-lime); }
+  .site-footer__bottom {
+    display: flex; flex-direction: column; gap: 0.5rem;
+    margin-top: clamp(3rem, 2rem + 4vw, 6rem); padding-block: 1.5rem;
+    font-size: 0.8125rem; color: rgba(255,255,255,0.85);
+  }
+  .site-footer__bottom a { text-decoration: underline; text-underline-offset: 2px; }
+
+  @media (min-width: 640px) {
+    .site-footer__cols { grid-template-columns: repeat(4, auto); justify-content: space-between; }
+    .site-footer__bottom { flex-direction: row; justify-content: space-between; align-items: center; }
+  }
+  @media (min-width: 1024px) {
+    .site-footer__grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1.45fr); }
+  }
+</style>

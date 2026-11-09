@@ -1,0 +1,62 @@
+---
+import { Image } from 'astro:assets';
+import swImg from '../assets/img/software-karta.png';
+import hwImg from '../assets/img/hardware-larta.png';
+import ptImg from '../assets/img/portal-karta.png';
+
+interface Props { current: 'software' | 'hardware' | 'portal'; title: string }
+const { current, title } = Astro.props;
+const items = [
+  { key: 'software', n: '01 / Software', t: 'Všechno pod kontrolou.<br /> Bez zbytečné složitosti.', d: 'Správa akcí, sálů, prodeje, rezervací, vstupenek, zákazníků, voucherů, zboží…', img: swImg, href: '/software', cta: 'Prozkoumat software', alt: 'Ukázka administrace systému Entradio na tabletu' },
+  { key: 'hardware', n: '02 / Hardware', t: 'Od pokladny až ke vstupu.', d: 'Skenery, tiskárny, platební terminály, kiosky a další zařízení připravená fungovat s celým systémem.', img: hwImg, href: '/hardware', cta: 'Prozkoumat hardware', alt: 'Čtečka vstupenek, platební terminál a tiskárna vstupenek' },
+  { key: 'portal', n: '03 / Portál', t: 'Místo, kde se návštěvník dostane ke své vstupence.', d: 'Online prodej prostřednictvím mytickets.vip nebo white-label řešení pod vlastní značkou pořadatele.', img: ptImg, href: '/portal', cta: 'Prozkoumat portál', alt: 'Prodejní portál MyTickets v mobilu' },
+] as const;
+---
+<section class="trio section" aria-labelledby="trio-title">
+  <div class="container">
+    <h2 class="h2 center trio__title" id="trio-title">{title}</h2>
+    <ul role="list" class="trio__grid">
+      {items.map((it, i) => {
+        const active = it.key === current;
+        return (
+          <li class:list={['trio__card', { 'is-current': active }]} data-reveal style={`--d:${i * 0.08}s`}>
+            <p class="trio__n">{it.n}</p>
+            <h3 class="trio__t" set:html={it.t} />
+            <p class="trio__d">{it.d}</p>
+            <div class="trio__img"><Image src={it.img} alt={it.alt} widths={[360, 720]} sizes="(min-width: 1024px) 400px, 90vw" loading="lazy" /></div>
+            {active
+              ? <a class="btn btn--ghost-dark btn--block trio__btn" href="#main">Zpět nahoru</a>
+              : <a class="btn btn--soft btn--block trio__btn" href={it.href}>{it.cta}</a>}
+          </li>
+        );
+      })}
+    </ul>
+  </div>
+</section>
+
+<style>
+  .trio__title { margin-bottom: clamp(2.25rem, 1.5rem + 2.5vw, 3.5rem); }
+  .trio__grid { display: grid; gap: 1.25rem; }
+  .trio__card {
+    position: relative; display: flex; flex-direction: column;
+    background: var(--c-sage); border-radius: var(--radius-l); border: 1px solid transparent;
+    padding: 1.5rem 1.5rem 1.5rem; overflow: hidden;
+    transition: transform 0.4s var(--ease-out), box-shadow 0.4s var(--ease-out);
+  }
+  .trio__card:hover { transform: translateY(-4px); box-shadow: 0 24px 40px -28px rgba(13,21,19,0.45); }
+  .trio__card.is-current { background: var(--c-sage-strong); border-color: var(--c-lime-2); }
+  .trio__n { font-size: 0.9375rem; margin-bottom: 0.75rem; }
+  .trio__t { font-size: clamp(1.375rem, 1.25rem + 0.4vw, 1.5rem); letter-spacing: -0.03em; margin-bottom: 0.875rem; max-width: 18ch; }
+  .trio__d { color: var(--c-text); font-size: 0.9375rem; max-width: 30ch; }
+  .trio__img {
+    margin-top: auto; padding-top: 1.75rem; display: flex; justify-content: center; align-items: flex-end;
+    height: 11.5rem; mask-image: linear-gradient(180deg, #000 70%, transparent);
+  }
+  .trio__img img { max-height: 100%; width: auto; object-fit: contain; }
+  .trio__btn { position: relative; margin-top: -0.75rem; }
+  .is-current .trio__btn { background: rgba(255,255,255,0.35); }
+  @media (min-width: 768px) {
+    .trio__grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .trio__img { height: 12.5rem; }
+  }
+</style>

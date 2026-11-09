@@ -1,0 +1,81 @@
+---
+import Base from '../layouts/Base.astro';
+import PageHero from '../components/PageHero.astro';
+import BgVideo from '../components/BgVideo.astro';
+import StepsLoop from '../components/StepsLoop.astro';
+import ProductTrio from '../components/ProductTrio.astro';
+import Reviews from '../components/Reviews.astro';
+import FinalCta from '../components/FinalCta.astro';
+import Faq from '../components/Faq.astro';
+import { faqMain } from '../data/faq';
+
+const steps = [
+  { title: 'Nastavíme systém', text: 'Nastavení na míru vašemu provozu a individuální zaškolení.' },
+  { title: 'Vytvoříte akci', text: 'Nastavíte sál, sezení, ceny i vouchery během pár minut.' },
+  { title: 'Spustíte prodej', text: 'Zákazníci nakupují online i na pokladně, vy vidíte vše na jednom místě.' },
+  { title: 'Sledujete vše<br /> z jednoho místa', text: 'Přehled o prodeji, rezervacích i tržbách v reálném čase.' },
+];
+---
+<Base
+  title="Software Entradio – celý prodej vstupenek pod kontrolou"
+  description="Jeden systém, který zvládne prodej, rezervace i vstup na akci. Správa akcí, sálů, prodeje, voucherů a doplňkového zboží v systému Entradio."
+>
+  <PageHero visualClass="sw-hero-visual">
+    <Fragment slot="title"><em>Software,</em> se kterým máte celý prodej pod kontrolou.</Fragment>
+    <Fragment slot="lead">Jeden systém, který zvládne prodej, rezervace i vstup na akci.</Fragment>
+    <img slot="visual" src="/svg/software-hero.svg" alt="Přehled prodejů v systému Entradio: prodané vstupenky, odbavení a graf prodeje za posledních 14 dní" width="1087" height="387" fetchpriority="high" />
+  </PageHero>
+
+  <div class="sheet">
+    <section class="section" aria-labelledby="sw-features-title">
+      <div class="container">
+        <div class="section-head">
+          <h2 class="h2" id="sw-features-title">Jeden systém.<br /> Vše pod kontrolou.</h2>
+          <p class="lead">Akce, sály, prodej i doplňkové zboží spravujete v systému Entradio.</p>
+        </div>
+
+        <div class="bento">
+          <div class="bento__col">
+            <article class="bcard bcard--light bcard--media-light" data-reveal>
+              <BgVideo name="akce-bez-chaosu" />
+              <h3 class="bcard__title">Spravujte akce bez chaosu</h3>
+              <p class="bcard__text">Zakládejte akce, nastavujte sezení, slevy i vouchery v jednom software.</p>
+            </article>
+            <article class="bcard bcard--media" data-reveal>
+              <BgVideo name="prodej-macbook" />
+              <h3 class="bcard__title">Mějte prodej pod kontrolou</h3>
+              <p class="bcard__text">Sledujte prodeje v reálném čase.</p>
+            </article>
+            <article class="bcard bcard--cta" data-reveal>
+              <h3 class="bcard__title">Vše na jednom místě</h3>
+              <p class="bcard__text">Žádné přepínání mezi nástroji. Jeden přehled pro celý tým.</p>
+              <a class="btn" href="/kontakt">Domluvit ukázku</a>
+            </article>
+          </div>
+          <div class="bento__col bento__col--offset">
+            <article class="bcard bcard--dark bcard--media" data-reveal>
+              <BgVideo name="sal-hologram" />
+              <h3 class="bcard__title">Vytvořte jakýkoliv sál</h3>
+              <p class="bcard__text">Máte atypický sál? Editor sálů vám umožní namodelovat libovolné uspořádání, sektory i volná místa.</p>
+            </article>
+            <article class="bcard bcard--light" data-reveal>
+              <h3 class="bcard__title">Prodávejte víc než vstupenky</h3>
+              <p class="bcard__text">Doplňkové zboží, parking nebo třeba vouchery, nejde jen o vstupenky.</p>
+              <div class="bcard__visual"><img src="/svg/prodavejte-vic-nez-vstupenky.svg" alt="Doplňkové položky: parkování, dárkový voucher, festivalové tričko, čepice, nápojový balíček" width="565" height="310" loading="lazy" /></div>
+            </article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <StepsLoop steps={steps} />
+    <ProductTrio current="software" title="A software je jen začátek." />
+    <Reviews />
+    <FinalCta />
+    <Faq items={faqMain} moreLink />
+  </div>
+</Base>
+
+<style>
+  :global(.sw-hero-visual) img { width: min(100%, 68rem); margin-inline: auto; }
+</style>

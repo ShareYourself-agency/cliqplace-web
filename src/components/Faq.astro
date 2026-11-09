@@ -1,0 +1,71 @@
+---
+import type { FaqItem } from '../data/faq';
+interface Props { items: FaqItem[]; title?: string; headingTag?: 'h1' | 'h2'; moreLink?: boolean; id?: string }
+const { items, title = 'Často kladené otázky', headingTag = 'h2', moreLink = false, id = 'faq' } = Astro.props;
+const H = headingTag;
+const schema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: items.map((i) => ({ '@type': 'Question', name: i.q, acceptedAnswer: { '@type': 'Answer', text: i.a.join(' ') } })),
+};
+---
+<section class="faq section" aria-labelledby={`${id}-title`}>
+  <div class="container">
+    <H class:list={[headingTag === 'h1' ? 'h1' : 'h2', 'faq__title']} id={`${id}-title`}>{title}</H>
+    <div class="faq__list">
+      {items.map((item) => (
+        <details class="faq__item" data-reveal>
+          <summary>
+            <span class="faq__q">{item.q}</span>
+            <span class="faq__icon" aria-hidden="true"></span>
+          </summary>
+          <div class="faq__a">
+            <div>{item.a.map((p) => <p>{p}</p>)}</div>
+          </div>
+        </details>
+      ))}
+    </div>
+    {moreLink && (
+      <div class="faq__more"><a class="btn" href="/dalsi-dotazy">Další dotazy</a></div>
+    )}
+  </div>
+  <script type="application/ld+json" set:html={JSON.stringify(schema)} />
+</section>
+
+<style>
+  .faq__title { margin-bottom: clamp(1.75rem, 1.25rem + 2vw, 2.75rem); }
+  .faq__list { display: grid; gap: 0.5rem; }
+  .faq__item {
+    background: var(--c-sage); border: 1px solid var(--c-line); border-radius: var(--radius);
+    transition: border-color 0.25s, background-color 0.25s;
+  }
+  .faq__item:hover { border-color: rgba(54, 93, 63, 0.7); }
+  .faq__item[open] { background: #e2ebd8; }
+  summary {
+    list-style: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: space-between; gap: 1.25rem;
+    padding: clamp(1.1rem, 0.9rem + 0.6vw, 1.4rem) clamp(1rem, 0.8rem + 0.6vw, 1.5rem);
+    min-height: 4.5rem;
+  }
+  summary::-webkit-details-marker { display: none; }
+  summary:focus-visible { outline-offset: -4px; border-radius: var(--radius); }
+  .faq__q { font-size: clamp(1.0625rem, 0.98rem + 0.35vw, 1.3125rem); letter-spacing: -0.02em; line-height: 1.3; font-weight: 450; }
+  .faq__icon {
+    position: relative; flex: none; width: 2.125rem; height: 2.125rem; border-radius: 0.5rem;
+    background: linear-gradient(180deg, #eef3e9, #d7e3cf);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.85), 0 0 0 1px rgba(54,93,63,0.28), 0 2px 4px rgba(13,21,19,0.12);
+  }
+  .faq__icon::before, .faq__icon::after {
+    content: ''; position: absolute; left: 50%; top: 50%; width: 0.875rem; height: 1.5px; background: var(--c-ink);
+    transform: translate(-50%, -50%); transition: transform 0.35s var(--ease-out);
+  }
+  .faq__icon::after { transform: translate(-50%, -50%) rotate(90deg); }
+  .faq__item[open] .faq__icon::after { transform: translate(-50%, -50%) rotate(0deg); }
+  .faq__a {
+    display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.4s var(--ease-out);
+  }
+  .faq__item[open] .faq__a { grid-template-rows: 1fr; }
+  .faq__a > div { overflow: hidden; padding-inline: clamp(1rem, 0.8rem + 0.6vw, 1.5rem); color: var(--c-text); max-width: 60rem; }
+  .faq__a p { padding-bottom: 1.4rem; line-height: 1.6; }
+  .faq__more { display: flex; justify-content: center; margin-top: 2rem; }
+</style>

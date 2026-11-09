@@ -1,0 +1,14 @@
+---
+interface Props { name: string; class?: string; label?: string }
+const { name, class: cls = '', label } = Astro.props;
+---
+<video
+  class:list={['bcard__bg', cls]}
+  src={`/media/${name}.mp4`}
+  poster={`/media/${name}.jpg`}
+  muted loop playsinline preload="none" disablepictureinpicture
+  data-inview
+  aria-hidden={label ? undefined : 'true'}
+  aria-label={label}
+  width="1200" height="900"
+></video>

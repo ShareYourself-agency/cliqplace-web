@@ -1,0 +1,27 @@
+---
+interface Props { id?: string; visualClass?: string }
+const { id = 'hero', visualClass = '' } = Astro.props;
+---
+<section class="dark-shell page-hero" aria-labelledby={`${id}-title`}>
+  <div class="container page-hero__inner">
+    <h1 class="h1 page-hero__title" id={`${id}-title`}><slot name="title" /></h1>
+    <p class="lead page-hero__lead"><slot name="lead" /></p>
+    <div class="btn-row page-hero__cta"><a class="btn" href="#jak-to-funguje">Jak to funguje?</a></div>
+  </div>
+  <div class:list={['page-hero__visual', visualClass]}>
+    <slot name="visual" />
+  </div>
+</section>
+
+<style>
+  .page-hero { padding-top: calc(var(--header-h) + clamp(3.5rem, 2rem + 5vw, 7rem)); }
+  .page-hero__inner { display: grid; justify-items: center; text-align: center; gap: 1.25rem; }
+  .page-hero__title { max-width: 22ch; }
+  .page-hero__title :global(em) { font-style: normal; color: var(--c-lime); }
+  .page-hero__lead { max-width: 39rem; color: rgba(255,255,255,0.9); }
+  .page-hero__cta { margin-top: 0.75rem; }
+  .page-hero__visual {
+    position: relative; width: min(var(--maxw), 100% - 2 * var(--gutter)); margin: clamp(2.5rem, 2rem + 2vw, 3.25rem) auto 0;
+    padding-bottom: var(--radius-xl);
+  }
+</style>

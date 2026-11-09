@@ -1,0 +1,112 @@
+---
+import { Image } from 'astro:assets';
+import Base from '../layouts/Base.astro';
+import PageHero from '../components/PageHero.astro';
+import BgVideo from '../components/BgVideo.astro';
+import StepsLoop from '../components/StepsLoop.astro';
+import ProductTrio from '../components/ProductTrio.astro';
+import Reviews from '../components/Reviews.astro';
+import FinalCta from '../components/FinalCta.astro';
+import Faq from '../components/Faq.astro';
+import { faqMain } from '../data/faq';
+import heroDevices from '../assets/img/portal-hero-devices.png';
+import online from '../assets/img/prodavejte-vstupenky-online.png';
+
+const steps = [
+  { title: 'Propojíte akci s portálem', text: 'Vaše akce se objeví na portálu během pár minut.' },
+  { title: 'Zákazník si vybere vstupenku', text: 'Prochází nabídku, vybírá místa nebo typ vstupenky.' },
+  { title: 'Zaplatí online', text: 'Rychlá a bezpečná platba přímo v prohlížeči.' },
+  { title: 'Vstupenka dorazí okamžitě', text: 'QR kód rovnou do e-mailu, a zákazník se může těšit na akci.' },
+];
+---
+<Base
+  title="Prodejní portál mytickets.vip a white-label prodej vstupenek"
+  description="Prodávejte vstupenky online jednoduše a bez zbytečných překážek. Přes mytickets.vip nebo white-label řešení pod vaší vlastní značkou."
+>
+  <PageHero visualClass="pt-hero-visual">
+    <Fragment slot="title">Místo, kde se návštěvník dostane ke své <em>vstupence.</em></Fragment>
+    <Fragment slot="lead">Prodávejte vstupenky online jednoduše a bez zbytečných překážek. Přes mytickets.vip nebo white-label řešení pod vaší vlastní značkou.</Fragment>
+    <Image slot="visual" src={heroDevices} alt="Prodejní portál MyTickets na notebooku a v mobilu" widths={[640, 1000, 1400, 1800]} sizes="(min-width: 1100px) 1000px, 92vw" loading="eager" fetchpriority="high" />
+  </PageHero>
+
+  <div class="sheet">
+    <section class="section" aria-labelledby="pt-features-title">
+      <div class="container">
+        <div class="section-head">
+          <h2 class="h2" id="pt-features-title">Jednoduchý nákup. Od výběru až po vstupenku.</h2>
+          <p class="lead">Návštěvník si vstupenku koupí na pár kliknutí. Na webu, v mobilu, kdykoliv.</p>
+        </div>
+
+        <div class="bento">
+          <div class="bento__col">
+            <article class="bcard bcard--media" data-reveal>
+              <Image class="bcard__bg" src={online} alt="" widths={[640, 1256]} sizes="(min-width: 900px) 640px, 100vw" loading="lazy" />
+              <h3 class="bcard__title">Prodávejte vstupenky online</h3>
+              <p class="bcard__text">Dejte návštěvníkům možnost koupit si vstupenku kdykoliv a odkudkoliv.</p>
+            </article>
+            <article class="bcard bcard--dark pt-data" data-reveal>
+              <h3 class="bcard__title">Mějte svá data pod kontrolou</h3>
+              <p class="bcard__text">Data vašich zákazníků zůstávají vaše a nejsou sdílena dál.</p>
+              <div class="bcard__visual">
+                <div class="scan">
+                  <img src="/svg/data-pod-kontrolou.svg" alt="Seznam zákazníků s anonymizovanými e-maily chráněný zámkem" width="512" height="301" loading="lazy" />
+                  <span class="scan__line" aria-hidden="true"></span>
+                </div>
+              </div>
+            </article>
+            <article class="bcard bcard--cta" data-reveal>
+              <h3 class="bcard__title">Zjednodušíme cestu k zážitku.</h3>
+              <p class="bcard__text">Od výběru akce až po vstupenku v mobilu. Bez zbytečných kroků.</p>
+              <a class="btn" href="/kontakt">Domluvit ukázku</a>
+            </article>
+          </div>
+          <div class="bento__col bento__col--offset">
+            <article class="bcard bcard--dark bcard--media" data-reveal>
+              <BgVideo name="portal-vase-znacka" />
+              <h3 class="bcard__title">Zůstaňte ve své značce</h3>
+              <p class="bcard__text">Díky white-label řešení může prodejní prostředí vystupovat pod vaším vlastním brandingem.</p>
+            </article>
+            <article class="bcard bcard--light" data-reveal>
+              <h3 class="bcard__title">Nabídněte víc než jen vstupenky</h3>
+              <p class="bcard__text">Vedle vstupenek můžete nabízet také dárkové karty, zboží nebo další služby.</p>
+              <div class="bcard__visual"><img src="/svg/prodavejte-vic-nez-vstupenky.svg" alt="Doplňkové položky: parkování, dárkový voucher, festivalové tričko, čepice, nápojový balíček" width="565" height="310" loading="lazy" /></div>
+            </article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <StepsLoop steps={steps} />
+    <ProductTrio current="portal" title="Místo na portálu je jen začátek." />
+    <Reviews />
+    <FinalCta />
+    <Faq items={faqMain} moreLink />
+  </div>
+</Base>
+
+<style>
+  :global(.pt-hero-visual) img {
+    width: min(100%, 62.5rem); margin-inline: auto;
+    mask-image: radial-gradient(ellipse 70% 80% at 50% 50%, #000 55%, transparent 78%);
+    -webkit-mask-image: radial-gradient(ellipse 70% 80% at 50% 50%, #000 55%, transparent 78%);
+  }
+  .pt-data { background: radial-gradient(ellipse 70% 60% at 50% 100%, rgba(54,93,63,0.4), transparent 70%), #0b110f; }
+  .scan { position: relative; width: min(100%, 32rem); overflow: hidden; border-radius: var(--radius); }
+  .scan img { width: 100%; }
+  .scan__line {
+    position: absolute; left: 0; right: 0; top: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, #8dff6b 18%, #c7ff9c 50%, #8dff6b 82%, transparent);
+    box-shadow: 0 0 10px 2px rgba(93,255,74,0.75), 0 0 28px 6px rgba(93,255,74,0.35);
+    animation: scan 3.2s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+  }
+  .scan__line::after {
+    content: ''; position: absolute; left: 0; right: 0; bottom: 2px; height: 3.5rem;
+    background: linear-gradient(0deg, rgba(141,255,107,0.18), transparent);
+  }
+  @keyframes scan {
+    0% { top: 0%; opacity: 0; }
+    10% { opacity: 1; }
+    85% { opacity: 1; }
+    100% { top: 100%; opacity: 0; }
+  }
+</style>

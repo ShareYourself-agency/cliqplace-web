@@ -1,0 +1,104 @@
+---
+import { Image } from 'astro:assets';
+import Base from '../layouts/Base.astro';
+import PageHero from '../components/PageHero.astro';
+import BgVideo from '../components/BgVideo.astro';
+import StepsLoop from '../components/StepsLoop.astro';
+import ProductTrio from '../components/ProductTrio.astro';
+import Reviews from '../components/Reviews.astro';
+import FinalCta from '../components/FinalCta.astro';
+import Faq from '../components/Faq.astro';
+import { faqMain } from '../data/faq';
+import odbaveni from '../assets/img/odbaveni-navstevniku.png';
+
+const steps = [
+  { title: 'Zjistíme, co potřebujete', text: 'Probereme velikost provozu a typ akcí, následně navrhneme vybavení.' },
+  { title: 'Vybereme zařízení', text: 'Skenery, tiskárny, terminály nebo kiosky přesně podle toho, co zrovna potřebujete.' },
+  { title: 'Dodáme a nastavíme', text: 'Zařízení nainstalujeme a propojíme s celým systémem.' },
+  { title: 'Můžete začít', text: 'Akce může začít. Jde to i bez komplikací.' },
+];
+---
+<Base
+  title="Hardware pro prodej a odbavení vstupenek"
+  description="Skenery, platební terminály, tiskárny vstupenek, kiosky a výdejní boxy. Dodáme a propojíme techniku, která funguje jako součást celého Cliqplace systému."
+>
+  <PageHero visualClass="hw-hero-visual">
+    <Fragment slot="title"><em>Hardware,</em> který drží krok s vaším provozem.</Fragment>
+    <Fragment slot="lead">Od prodeje na pokladně až po kontrolu vstupenek u vstupu. Dodáme a propojíme techniku, která je připravená fungovat jako součást celého Cliqplace systému.</Fragment>
+    <img slot="visual" src="/svg/cliqplace-hardware-zarizeni-pruhledne.svg" alt="Čtečka vstupenek, platební terminál, samoobslužný kiosek a tiskárna vstupenek" width="1346" height="465" fetchpriority="high" />
+  </PageHero>
+
+  <div class="sheet">
+    <section class="section" aria-labelledby="hw-features-title">
+      <div class="container">
+        <div class="section-head">
+          <h2 class="h2" id="hw-features-title">Všechno, co potřebujete.<br /> Připravené fungovat.</h2>
+          <p class="lead">Skenery, terminály, tiskárny i kiosky propojené s celým systémem.</p>
+        </div>
+
+        <div class="bento">
+          <div class="bento__col">
+            <article class="bcard bcard--light" data-reveal>
+              <h3 class="bcard__title">Odbavte návštěvníky bez zdržování</h3>
+              <p class="bcard__text">Skenery pro rychlou kontrolu QR kódů a plynulý vstup návštěvníků.</p>
+              <div class="bcard__visual hw-scan"><Image src={odbaveni} alt="Mobilní vstupenka s QR kódem a potvrzením platnosti: řada 3, sedadlo 12" widths={[461, 922]} sizes="(min-width: 900px) 461px, 90vw" loading="lazy" /></div>
+            </article>
+            <article class="bcard bcard--light bcard--media-light" data-reveal>
+              <BgVideo name="tiskarna" />
+              <h3 class="bcard__title">Vytiskněte, co potřebujete</h3>
+              <p class="bcard__text">Tiskárny pro vstupenky, účtenky a další doklady přímo propojené s vaším systémem.</p>
+            </article>
+            <article class="bcard bcard--cta" data-reveal>
+              <h3 class="bcard__title">Od pokladny až ke vstupu.</h3>
+              <p class="bcard__text">Dodáme, zapojíme a propojíme. Vy jen otevřete brány.</p>
+              <a class="btn" href="/kontakt">Domluvit ukázku</a>
+            </article>
+          </div>
+          <div class="bento__col bento__col--offset">
+            <article class="bcard bcard--media" data-reveal>
+              <BgVideo name="platebni-terminal" />
+              <h3 class="bcard__title">Prodávejte přímo na místě</h3>
+              <p class="bcard__text">Platební terminály a pokladní řešení pro pohodlný prodej vstupenek i dalších položek.</p>
+            </article>
+            <article class="bcard bcard--dark hw-more" data-reveal>
+              <h3 class="bcard__title">Dejte zákazníkům více možností</h3>
+              <p class="bcard__text">Samoobslužné kiosky a výdejní boxy pomáhají zvládnout provoz s menšími frontami a bez zbytečné obsluhy.</p>
+              <div class="hw-more__tiles">
+                <div class="hw-tile">
+                  <svg viewBox="0 0 64 64" aria-hidden="true"><rect x="18" y="6" width="28" height="40" rx="4" /><rect x="22" y="11" width="20" height="22" rx="2" /><path d="M27 38h10M24 46l-4 12h24l-4-12" /></svg>
+                  <span>Samoobslužný kiosek</span>
+                </div>
+                <div class="hw-tile">
+                  <svg viewBox="0 0 64 64" aria-hidden="true"><rect x="8" y="8" width="48" height="48" rx="4" /><path d="M8 24h48M8 40h48M32 8v48" /><circle cx="27" cy="16" r="1.5" /><circle cx="27" cy="32" r="1.5" /><circle cx="51" cy="16" r="1.5" /><circle cx="51" cy="48" r="1.5" /></svg>
+                  <span>Výdejní box</span>
+                </div>
+              </div>
+            </article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <StepsLoop steps={steps} />
+    <ProductTrio current="hardware" title="Hardware je jen jedna část." />
+    <Reviews />
+    <FinalCta />
+    <Faq items={faqMain} moreLink />
+  </div>
+</Base>
+
+<style>
+  :global(.hw-hero-visual) img { width: min(100%, 84rem); margin-inline: auto; }
+  .hw-scan { margin-bottom: calc(clamp(1.5rem, 1.2rem + 0.8vw, 2rem) * -1); }
+  .hw-scan img { width: min(100%, 28.8rem); }
+  .hw-more { background: radial-gradient(ellipse 80% 60% at 50% 100%, rgba(76,140,84,0.35), transparent 70%), #0b110f; }
+  .hw-more__tiles { margin-top: auto; padding-top: 1.75rem; display: grid; grid-template-columns: 1fr 1fr; gap: 0.875rem; }
+  .hw-tile {
+    display: grid; justify-items: center; gap: 0.75rem; text-align: center;
+    padding: 1.5rem 0.75rem; border-radius: var(--radius);
+    background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+    border: 1px solid rgba(199,255,156,0.16); font-size: 0.9375rem; color: rgba(255,255,255,0.9);
+  }
+  .hw-tile svg { width: 3.5rem; height: 3.5rem; fill: none; stroke: var(--c-lime); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 0 6px rgba(93,255,74,0.55)); }
+  .hw-tile circle { fill: var(--c-lime); stroke: none; }
+</style>

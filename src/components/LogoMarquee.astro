@@ -1,0 +1,38 @@
+---
+import { Image } from 'astro:assets';
+import l1 from '../assets/logos/logo1.png';
+import l2 from '../assets/logos/logo2.png';
+import l3 from '../assets/logos/logo3.png';
+import l4 from '../assets/logos/logo4.png';
+import l5 from '../assets/logos/logo5.png';
+import l6 from '../assets/logos/logo6.png';
+import l7 from '../assets/logos/logo7.png';
+import l8 from '../assets/logos/logo8.png';
+import l9 from '../assets/logos/logo9.png';
+import l10 from '../assets/logos/logo10.png';
+
+const logos = [
+  [l1, 'Hrad Kašperk'],
+  [l2, 'Kulturní dům města Soběslavi'],
+  [l3, 'Kulturní a společenské středisko Střelnice'],
+  [l4, 'Klient Cliqplace'],
+  [l5, 'Kino Hvězda Přerov'],
+  [l6, 'Sirkus – Sušické kulturní centrum'],
+  [l7, 'Kultura Boskovice'],
+  [l8, 'Městská knihovna Most'],
+  [l9, 'Juniorfest'],
+  [l10, 'Centrum kultury Písek'],
+] as const;
+---
+<section class="logos" aria-labelledby="logos-label">
+  <p class="logos__label" id="logos-label">Ticketing, na který se spoléhají...</p>
+  <div class="marquee">
+    {[0, 1].map((copy) => (
+      <ul role="list" class="marquee__track" aria-hidden={copy === 1 ? 'true' : undefined}>
+        {logos.map(([src, alt]) => (
+          <li><Image src={src} alt={copy === 1 ? '' : alt} height={72} densities={[1, 2]} loading="lazy" /></li>
+        ))}
+      </ul>
+    ))}
+  </div>
+</section>

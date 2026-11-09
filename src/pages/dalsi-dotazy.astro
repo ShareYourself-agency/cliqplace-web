@@ -1,0 +1,24 @@
+---
+import Base from '../layouts/Base.astro';
+import Faq from '../components/Faq.astro';
+import { faqMain, faqMore } from '../data/faq';
+---
+<Base
+  title="Často kladené otázky"
+  description="Odpovědi na časté dotazy k ticketingu Cliqplace: ceny, přechod, hardware, platby, white-label, podpora a GDPR."
+  headerTheme="light"
+>
+  <div class="faq-page">
+    <Faq items={[...faqMain, ...faqMore]} headingTag="h1" />
+    <div class="container faq-page__cta">
+      <p>Nenašli jste odpověď?</p>
+      <a class="btn" href="/kontakt">Napište nám</a>
+    </div>
+  </div>
+</Base>
+
+<style>
+  .faq-page { padding-top: calc(var(--header-h) + 1rem); padding-bottom: var(--section-y); }
+  .faq-page__cta { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 1rem 1.5rem; font-size: 1.125rem; }
+  .faq-page :global(.faq) { padding-bottom: 2.5rem; }
+</style>
