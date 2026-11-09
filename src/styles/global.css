@@ -388,9 +388,6 @@ p { text-wrap: pretty; }
 @keyframes fx-vt-out { to { opacity: 0; } }
 @keyframes fx-vt-in { from { opacity: 0; translate: 0 12px; } }
 
-/* links in nav/footer: short flicker */
-.site-nav__list a:not(.btn):hover, .site-footer a:hover { animation: fx-flicker 0.45s steps(1, end); }
-@keyframes fx-flicker { 0% { opacity: 1; } 20% { opacity: 0.35; } 35% { opacity: 1; } 55% { opacity: 0.6; } 70%, 100% { opacity: 1; } }
 
 @media (prefers-reduced-motion: reduce) {
   .js .fx-split .fx-w { opacity: 1; translate: none; filter: none; }
