@@ -312,12 +312,17 @@ function initHeroParallax() {
   const cards = Array.from(document.querySelectorAll<HTMLElement>('.hero-card'));
   const hero = document.querySelector<HTMLElement>('.home-hero');
   if (finePointer && cards.length && hero) {
-    const depth = [18, 10, 26];
-    hero.addEventListener('pointermove', (e) => {
-      const x = e.clientX / innerWidth - 0.5; const y = e.clientY / innerHeight - 0.5;
-      cards.forEach((c, i) => { c.style.translate = `${-x * depth[i]}px ${-y * depth[i]}px`; });
-    });
-    hero.addEventListener('pointerleave', () => cards.forEach((c) => { c.style.translate = ''; }));
+    // smooth (lerped) parallax – no jumps when the cursor enters/leaves or crosses a card
+    const depth = [14, 8, 18];
+    let tx = 0, ty = 0, cx = 0, cy = 0, raf = 0;
+    const loop = () => {
+      cx += (tx - cx) * 0.06; cy += (ty - cy) * 0.06;
+      cards.forEach((c, i) => { c.style.translate = `${(-cx * depth[i]).toFixed(2)}px ${(-cy * depth[i]).toFixed(2)}px`; });
+      raf = Math.abs(tx - cx) + Math.abs(ty - cy) > 0.001 ? requestAnimationFrame(loop) : 0;
+    };
+    const kick = () => { if (!raf) raf = requestAnimationFrame(loop); };
+    hero.addEventListener('pointermove', (e) => { tx = e.clientX / innerWidth - 0.5; ty = e.clientY / innerHeight - 0.5; kick(); });
+    hero.addEventListener('pointerleave', () => { tx = 0; ty = 0; kick(); });
   }
   // subpage hero visual: tilts back and straightens on scroll
   const vis = document.querySelector<HTMLElement>('.page-hero__visual');

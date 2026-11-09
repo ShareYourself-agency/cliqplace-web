@@ -319,9 +319,10 @@ p { text-wrap: pretty; }
 .fx-shine--strong::before { mix-blend-mode: normal; background: linear-gradient(100deg, transparent 0%, rgba(255,255,255,0) 25%, rgba(255,255,255,0.45) 50%, rgba(255,255,255,0) 75%, transparent 100%); }
 .fx-host:hover > .fx-shine::before, .fx-host:focus-visible > .fx-shine::before { animation: fx-sweep 0.85s var(--ease-out); }
 @keyframes fx-sweep { from { translate: -160% 0; } to { translate: 330% 0; } }
-/* quick brightness blink together with the sweep */
-.fx-host:hover { animation: fx-blink 0.5s ease-out; }
-@keyframes fx-blink { 0% { filter: brightness(1); } 30% { filter: brightness(1.12); } 100% { filter: brightness(1); } }
+/* quick light blink together with the sweep (overlay only – no filter on the card itself) */
+.fx-shine::after { content: ''; position: absolute; inset: 0; background: rgba(255,255,255,0.10); opacity: 0; }
+.fx-host:hover > .fx-shine::after { animation: fx-blink 0.5s ease-out; }
+@keyframes fx-blink { 0% { opacity: 0; } 25% { opacity: 1; } 100% { opacity: 0; } }
 
 /* 3D tilt with glare */
 .fx-tilt {
