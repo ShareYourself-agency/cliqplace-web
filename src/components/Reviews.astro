@@ -1,5 +1,7 @@
 ---
-import { reviews } from '../data/reviews';
+import { reviews as all } from '../data/reviews';
+const len = (r: (typeof all)[number]) => r.text.join(' ').length;
+const reviews = [...all].sort((a, b) => len(a) - len(b));
 interface Props { title?: string }
 const { title = 'Příběhy našich klientů' } = Astro.props;
 const n = reviews.length;

@@ -284,7 +284,9 @@ p { text-wrap: pretty; }
   min-height: auto; justify-content: center; gap: 0.25rem;
   background: linear-gradient(110deg, #2e5036 0%, #1a2c22 45%, #0c1412 100%); color: #fff;
 }
-.bcard--cta .bcard__text { color: rgba(255,255,255,0.86); margin-bottom: 1.5rem; }
+.bcard--cta { gap: 0; padding-block: clamp(1.5rem, 1.2rem + 1vw, 2rem); }
+.bcard--cta .bcard__title { margin-bottom: 0.5rem; }
+.bcard--cta .bcard__text { color: rgba(255,255,255,0.86); margin-bottom: 1.25rem; max-width: none; }
 .bcard--cta .btn { align-self: flex-start; }
 .bcard__visual { margin-top: auto; padding-top: 1.5rem; display: flex; justify-content: center; }
 @media (min-width: 700px) {
@@ -393,3 +395,11 @@ p { text-wrap: pretty; }
 
 /* performance: section-level containment keeps repaints local */
 .dark-shell, .around__box, .steps, .final-cta, .reviews { contain: paint; }
+
+/* phones: single column, CTA tile always last */
+@media (max-width: 699.98px) {
+  .bento__col { display: contents; }
+  .bcard--cta { order: 99; }
+}
+.br-m { display: none; }
+@media (max-width: 639.98px) { .br-m { display: inline; } }

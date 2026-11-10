@@ -50,9 +50,9 @@ const items = [
   .trio__d { color: var(--c-text); font-size: 0.9375rem; max-width: 30ch; }
   .trio__img {
     margin-top: auto; padding-top: 1.75rem; display: flex; justify-content: center; align-items: flex-end;
-    height: 11.5rem;
+    height: 13.5rem;
   }
-  .trio__img img { max-height: 100%; width: auto; object-fit: contain; }
+  .trio__img img { width: 100%; height: 100%; max-height: none; object-fit: contain; object-position: center bottom; }
   .trio__img { position: relative; }
   .trio__img::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 35%; background: linear-gradient(180deg, transparent, var(--card-bg)); pointer-events: none; }
   .trio__card { --card-bg: var(--c-sage); }
@@ -67,6 +67,6 @@ const items = [
   }
   @media (min-width: 1024px) {
     .trio__grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    .trio__img { height: 12.5rem; }
+    .trio__img { height: 14.5rem; }
   }
 </style>

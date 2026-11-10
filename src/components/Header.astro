@@ -34,16 +34,23 @@ const path = Astro.url.pathname.replace(/\/$/, '');
   .site-header {
     position: fixed; inset: 0 0 auto 0; z-index: 50;
     height: var(--header-h);
-    transition: background-color 0.3s, backdrop-filter 0.3s, box-shadow 0.3s, transform 0.35s var(--ease-out);
+    transition: transform 0.35s var(--ease-out);
   }
+  /* background lives on a pseudo-element: backdrop-filter on the header itself would trap the fixed mobile menu */
+  .site-header::before {
+    content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+    opacity: 0; transition: opacity 0.3s;
+    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  }
+  .site-header--dark::before { background: rgba(12, 20, 18, 0.9); box-shadow: 0 1px 0 rgba(255,255,255,0.06); }
+  .site-header--light::before { background: rgba(247, 248, 246, 0.9); box-shadow: 0 1px 0 rgba(13,21,19,0.06); }
+  .site-header.is-scrolled::before { opacity: 1; }
+  .site-header.menu-open::before { opacity: 0; }
   .site-header--dark { color: #fff; }
   .site-header--light { color: var(--c-ink); }
   .site-header__logo .logo-dark { display: none; }
   .site-header--light:not(.menu-open) .site-header__logo .logo-light { display: none; }
   .site-header--light:not(.menu-open) .site-header__logo .logo-dark { display: block; }
-  .site-header.is-scrolled.site-header--dark { background: rgba(12, 20, 18, 0.9); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); box-shadow: 0 1px 0 rgba(255,255,255,0.06); }
-  .site-header.is-scrolled.site-header--light { background: rgba(247, 248, 246, 0.82); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); box-shadow: 0 1px 0 rgba(13,21,19,0.06); }
-  .site-header.is-hidden { transform: translateY(-100%); }
 
   .site-header__inner { height: 100%; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
   .site-header__logo img { width: clamp(7.25rem, 6.5rem + 1.5vw, 8.2rem); height: auto; }
@@ -81,7 +88,8 @@ const path = Astro.url.pathname.replace(/\/$/, '');
       position: fixed; inset: 0; z-index: 1;
       background: var(--c-night); color: #fff;
       display: grid; align-content: center;
-      padding: calc(var(--header-h) + 1rem) var(--gutter) 2rem;
+      padding: calc(var(--header-h) + 1rem) var(--gutter) max(2rem, env(safe-area-inset-bottom));
+      height: 100dvh; overflow-y: auto; overscroll-behavior: contain;
       opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0.3s;
     }
     .site-nav::before {

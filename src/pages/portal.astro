@@ -56,13 +56,13 @@ const steps = [
             </article>
             <article class="bcard bcard--cta" data-reveal>
               <h3 class="bcard__title">Zjednodušíme cestu k zážitku.</h3>
-              <p class="bcard__text">Od výběru akce až po vstupenku v mobilu. Bez zbytečných kroků.</p>
+              <p class="bcard__text">Od výběru akce až po vstupenku v mobilu.<br /> Bez zbytečných kroků.</p>
               <a class="btn" href="/kontakt">Domluvit ukázku</a>
             </article>
           </div>
           <div class="bento__col bento__col--offset">
             <article class="bcard bcard--dark bcard--media" data-reveal>
-              <BgVideo name="portal-vase-znacka" />
+              <BgVideo name="portal-vase-znacka" class="pt-brand-video" />
               <h3 class="bcard__title">Zůstaňte ve své značce</h3>
               <p class="bcard__text">Díky white-label řešení může prodejní prostředí vystupovat pod vaším vlastním brandingem.</p>
             </article>
@@ -85,6 +85,7 @@ const steps = [
 </Base>
 
 <style>
+  .bcard :global(.pt-brand-video) { top: auto; bottom: 0; height: calc(100% - 6.5rem); object-position: center top; }
   :global(.pt-hero-visual) { margin-top: clamp(3.5rem, 2.5rem + 4vw, 6rem); padding-bottom: calc(var(--radius-xl) + 2rem); }
   .pt-data { background: radial-gradient(ellipse 70% 60% at 50% 100%, rgba(54,93,63,0.4), transparent 70%), #0b110f; }
   .scan { position: relative; width: min(100%, 32rem); overflow: hidden; border-radius: var(--radius); }

@@ -4,7 +4,8 @@ import ribbon from '../assets/img/glowing-neon-green-energy-ribbon.png';
 ---
 <section class="final-cta section" aria-labelledby="final-cta-title">
   <div class="container final-cta__wrap">
-    <Image class="final-cta__ribbon" src={ribbon} alt="" widths={[900, 1500, 2145]} quality={92} sizes="(min-width: 1440px) 1400px, 100vw" loading="lazy" />
+    <Image class="final-cta__ribbon final-cta__ribbon--back" src={ribbon} alt="" widths={[900, 1500, 2145]} quality={92} sizes="(min-width: 1440px) 1400px, 100vw" loading="lazy" />
+    <Image class="final-cta__ribbon final-cta__ribbon--front" src={ribbon} alt="" widths={[900, 1500, 2145]} quality={92} sizes="(min-width: 1440px) 1400px, 100vw" loading="lazy" aria-hidden="true" />
     <div class="final-cta__card" data-reveal>
       <h2 class="h1 final-cta__title" id="final-cta-title"><span>Vy prodáváte vstupenky.</span> <span>My se postaráme</span> <span>o&nbsp;všechno&nbsp;okolo.</span></h2>
       <a class="btn" href="/kontakt">Domluvit ukázku</a>
@@ -17,9 +18,11 @@ import ribbon from '../assets/img/glowing-neon-green-energy-ribbon.png';
   .final-cta__wrap { position: relative; }
   .final-cta__ribbon {
     position: absolute; left: 50%; top: 50%; width: 112%; max-width: none; height: auto;
-    transform: translate(-50%, -50%); pointer-events: none;
+    transform: translate(-50%, -46%); pointer-events: none;
     filter: drop-shadow(0 0 24px rgba(93, 255, 74, 0.25));
   }
+  .final-cta__ribbon--back { z-index: 0; }
+  .final-cta__ribbon--front { z-index: 2; mask-image: linear-gradient(180deg, transparent 72%, #000 80%); -webkit-mask-image: linear-gradient(180deg, transparent 72%, #000 80%); }
   .final-cta__card {
     position: relative; z-index: 1;
     display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between; gap: 2rem;
@@ -37,6 +40,8 @@ import ribbon from '../assets/img/glowing-neon-green-energy-ribbon.png';
     .final-cta__title { font-size: clamp(1.9rem, 1.2rem + 3.4vw, 2.6rem); }
   }
   @media (max-width: 767.98px) {
-    .final-cta__ribbon { width: 190%; top: 52%; }
+    .final-cta__ribbon { display: none; }
+    .final-cta__card { align-items: stretch; text-align: left; box-shadow: 0 0 0 1px rgba(141,255,107,0.35), 0 0 40px -10px rgba(93,255,74,0.45), 0 30px 60px -30px rgba(12,20,18,0.6); }
+    .final-cta__card .btn { width: 100%; }
   }
 </style>

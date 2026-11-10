@@ -18,6 +18,7 @@ function initHeader() {
     toggle?.setAttribute('aria-expanded', String(open));
     if (label) label.textContent = open ? 'Zavřít menu' : 'Otevřít menu';
     document.documentElement.style.overflow = open ? 'hidden' : '';
+    document.body.style.overflow = open ? 'hidden' : '';
   };
   toggle?.addEventListener('click', () => setOpen(toggle.getAttribute('aria-expanded') !== 'true'));
   header.querySelectorAll('.site-nav a').forEach((a) => a.addEventListener('click', () => setOpen(false)));
@@ -163,6 +164,39 @@ function initLoops() {
   });
 }
 
+/* ------------------------------------------------------------------ "Jak to funguje": steps light up with scroll */
+function initScrollSteps() {
+  const wide = window.matchMedia('(min-width: 768px)');
+  document.querySelectorAll<HTMLElement>('[data-steps-scroll]').forEach((root) => {
+    const steps = Array.from(root.querySelectorAll<HTMLElement>('[data-step]'));
+    const n = steps.length;
+    let last = -1;
+    const set = (a: number) => {
+      if (a === last) return; last = a;
+      steps.forEach((el, i) => { el.dataset.state = i < a ? 'done' : i === a ? 'active' : 'next'; });
+    };
+    if (reduceMotion) { set(n - 1); return; }
+    let ticking = false;
+    const update = () => {
+      ticking = false;
+      const vh = innerHeight;
+      if (wide.matches) {
+        const r = root.getBoundingClientRect();
+        const start = vh * 0.85, end = vh * 0.3;
+        const p = Math.min(1, Math.max(0, (start - r.top) / (start - end)));
+        set(Math.min(n - 1, Math.floor(p * n)));
+      } else {
+        let a = 0;
+        steps.forEach((el, i) => { if (el.getBoundingClientRect().top < vh * 0.62) a = i; });
+        set(a);
+      }
+    };
+    addEventListener('scroll', () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } }, { passive: true });
+    addEventListener('resize', update);
+    update();
+  });
+}
+
 /* ------------------------------------------------------------------ neon cable drawn on scroll */
 function initCables() {
   const cables = Array.from(document.querySelectorAll<SVGSVGElement>('[data-cable]'));
@@ -227,6 +261,7 @@ function initProgress() {
 }
 
 function initSplit() {
+  if (!finePointer) return;
   const heads = document.querySelectorAll<HTMLElement>('main .h1, main .h2');
   heads.forEach((h) => {
     let wi = 0;
@@ -262,14 +297,14 @@ function initSplit() {
 
 function initShine() {
   // calm hover: soft lime edge glow (no white sweep)
-  document.querySelectorAll('.btn, .trio__card, .audience, .pillar, .faq__item, .how-card, .how-cta, .glass, .bcard, .review').forEach((el) => el.classList.add('fx-glow'));
-  document.querySelectorAll('.glass, .bcard--cta, .final-cta__card, .hw-more, .pt-data').forEach((el) => el.classList.add('fx-neon'));
-  document.querySelectorAll('.audience, .trio__card').forEach((el) => el.classList.add('fx-lift'));
+  document.querySelectorAll('.btn, .trio__card, .pillar, .faq__item').forEach((el) => el.classList.add('fx-glow'));
+  document.querySelectorAll('.glass').forEach((el) => el.classList.add('fx-neon'));
+  document.querySelectorAll('.trio__card').forEach((el) => el.classList.add('fx-lift'));
 }
 
 function initTilt() {
   if (!finePointer || reduceMotion) return;
-  const els = document.querySelectorAll<HTMLElement>('.pillar, .audience, .glass, .bcard, .trio__card, .final-cta__card, .how-card');
+  const els = document.querySelectorAll<HTMLElement>('.pillar, .glass, .bcard, .trio__card, .final-cta__card');
   els.forEach((el) => {
     el.classList.add('fx-tilt');
     const glare = document.createElement('span');
@@ -389,4 +424,5 @@ initReveal();
 initCounters();
 initLoops();
 initCables();
+initScrollSteps();
 initVideos();

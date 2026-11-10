@@ -90,6 +90,11 @@ const steps = [
       <div class="container">
         <h2 class="h2 center pillars__title" id="pillars-title">Cliqplace. Jeden partner.<br /> Celý ticketing.</h2>
         <div class="pillars__stage">
+          <svg class="pillars__vpipe" viewBox="0 0 100 1000" preserveAspectRatio="none" aria-hidden="true">
+            <path class="vp-glass" d="M50 0 C 50 120, 20 180, 20 300 S 80 480, 80 600 S 30 820, 50 1000" />
+            <path class="vp-core" d="M50 0 C 50 120, 20 180, 20 300 S 80 480, 80 600 S 30 820, 50 1000" />
+            <path class="vp-light" pathLength="100" d="M50 0 C 50 120, 20 180, 20 300 S 80 480, 80 600 S 30 820, 50 1000" />
+          </svg>
           <div class="pillars__net" aria-hidden="true">
             <Image class="pillars__network" src={network} alt="" widths={[900, 1400, 1906]} quality={92} sizes="(min-width: 1024px) 1324px, 100vw" loading="lazy" />
             <Image class="pillars__network pillars__pulse" src={network} alt="" widths={[900, 1400, 1906]} quality={92} sizes="(min-width: 1024px) 1324px, 100vw" loading="lazy" />
@@ -134,7 +139,7 @@ const steps = [
               <article class="how-card">
                 <img class="how-card__img" src={`/svg/${s.img}.svg`} alt="" width="160" height="104" loading="lazy" />
                 <div class="how-card__body">
-                  <h3 class="how-card__title">{s.title}</h3>
+                  <h3 class="how-card__title"><span class="how-card__n" aria-hidden="true">{i + 1}</span>{s.title}</h3>
                   <p class="how-card__text">{s.text}</p>
                 </div>
                 <span class="how-card__num" aria-hidden="true">{i + 1}</span>
@@ -239,7 +244,7 @@ const steps = [
   .home-hero__copy { display: grid; justify-items: center; text-align: center; gap: 1.5rem; }
   .home-hero__title { max-width: 17ch; }
   .home-hero__title .text-lime { display: block; }
-  .home-hero__lead { max-width: 36rem; color: rgba(255,255,255,0.92); }
+  .home-hero__lead { max-width: 47rem; color: rgba(255,255,255,0.92); }
   .home-hero .btn-row { margin-top: 0.5rem; }
 
   .hero-cards { position: relative; width: 100%; max-width: 40rem; order: 2; height: clamp(13rem, 52vw, 19rem); margin-top: 2.5rem; }
@@ -318,7 +323,8 @@ const steps = [
   }
   .pillar__tag {
     font-size: 0.75rem; padding: 0.3rem 0.75rem; border-radius: 99px; margin-bottom: 1.1rem;
-    background: rgba(255,255,255,0.45); border: 1px dashed rgba(54,93,63,0.35); color: var(--c-text);
+    background: rgba(255,255,255,0.6); border: 1px solid rgba(255,255,255,0.95); color: var(--c-text);
+    box-shadow: 0 0 0 1px rgba(54,93,63,0.1), 0 2px 10px rgba(93,180,80,0.18);
   }
   .pillar__title { margin-bottom: 0.75rem; max-width: 17ch; }
   .pillar__text { color: var(--c-text); margin-bottom: 1.5rem; max-width: 30ch; }
@@ -334,7 +340,6 @@ const steps = [
   .audiences__title { margin-bottom: clamp(2.25rem, 1.5rem + 2.5vw, 3.5rem); }
   .audiences__grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; }
   .audience { flex: 1 1 100%; padding: 1.5rem 1.5rem 1.75rem; display: grid; align-content: start; gap: 0.4rem; transition: translate 0.35s var(--ease-out), box-shadow 0.35s var(--ease-out); }
-  .audience:hover { box-shadow: 0 20px 34px -24px rgba(13,21,19,0.4); }
   .audience .icon-tile { margin-bottom: 1.25rem; }
   .audience__text { color: var(--c-text); max-width: 28ch; }
   @media (min-width: 640px) { .audience { flex-basis: calc(50% - 0.5rem); flex-grow: 0; } }
@@ -384,27 +389,32 @@ const steps = [
   }
   .around__cable { position: absolute; inset: 0; width: 100%; height: 100%; z-index: -1; }
   .around__title { margin-bottom: clamp(2.5rem, 2rem + 2vw, 3.75rem); }
-  .around__grid { display: grid; gap: 1rem; max-width: 70rem; margin-inline: auto; }
-  .around__col { display: grid; gap: 1rem; align-content: start; }
+  .around__grid { display: grid; gap: 1.75rem; max-width: 70rem; margin-inline: auto; }
+  .around__col { display: grid; gap: 1.75rem; align-content: start; }
   .glass {
-    position: relative; display: flex; flex-direction: column; overflow: hidden;
-    min-height: clamp(17rem, 14rem + 8vw, 21rem);
+    position: relative; display: flex; flex-direction: column;
+    min-height: clamp(17rem, 13rem + 9vw, 23rem);
     padding: clamp(1.5rem, 1.2rem + 1vw, 1.9rem);
     border-radius: var(--radius-l);
     background: linear-gradient(160deg, rgba(48,80,58,0.78), rgba(24,40,31,0.72));
     border: 1px solid rgba(255,255,255,0.1);
     box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), 0 30px 60px -40px rgba(0,0,0,0.7);
   }
+  .glass--img-top { justify-content: flex-end; }
+  .glass__title, .glass__text { position: relative; z-index: 3; }
   .glass__title { font-size: clamp(1.25rem, 1.15rem + 0.4vw, 1.4rem); letter-spacing: -0.025em; line-height: 1.2; margin-bottom: 0.5rem; }
-  .glass__text { color: rgba(255,255,255,0.82); font-size: 0.9375rem; max-width: 26ch; }
-  .glass__img { width: auto; max-width: 82%; max-height: 15.5rem; object-fit: contain; filter: drop-shadow(0 0 20px rgba(93,255,74,0.25)); }
-  .glass__img--end { align-self: flex-end; margin-top: auto; padding-top: 1rem; }
-  .glass--img-top .glass__img { margin-top: 0; padding-top: 0; margin-bottom: auto; padding-bottom: 1rem; }
+  .glass__text { color: rgba(255,255,255,0.82); font-size: 0.9375rem; max-width: 36ch; }
+  /* neon objects break out of the tile → 3D feel */
+  .glass__img {
+    position: absolute; z-index: 2; right: -7%; bottom: -9%; width: 64%; max-width: none; height: auto; max-height: none;
+    object-fit: contain; pointer-events: none; filter: drop-shadow(0 0 22px rgba(93,255,74,0.28));
+  }
+  .glass--img-top .glass__img { bottom: auto; top: -11%; right: -6%; width: 60%; }
   .around__cta { display: flex; justify-content: center; margin-top: clamp(2.5rem, 2rem + 2vw, 3.5rem); }
   @media (min-width: 900px) {
-    .around__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem; }
-    .around__col { gap: 1.25rem; }
-    .around__col--offset { padding-top: 3.75rem; }
+    .around__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2rem; }
+    .around__col { gap: 2rem; }
+    .around__col--offset { padding-top: 4.5rem; }
   }
 </style>
 
@@ -423,19 +433,48 @@ const steps = [
     .glass { min-height: 17rem; }
   }
   @media (max-width: 639.98px) {
-    /* compact audience rows: icon left, text right */
+    /* compact audience rows: icon left (vertically centred), text right */
     .audiences__grid { gap: 0.625rem; }
-    .audience { grid-template-columns: auto 1fr; column-gap: 1rem; row-gap: 0.15rem; padding: 1rem 1.1rem; align-items: start; }
-    .audience .icon-tile { grid-row: span 2; margin: 0; width: 2.75rem; height: 2.75rem; }
-    .audience__text { font-size: 0.925rem; max-width: none; }
-    .hero-cards { margin-top: 2rem; }
+    .audience { grid-template-columns: auto 1fr; column-gap: 1rem; row-gap: 0.15rem; padding: 1rem 1.1rem; align-items: center; }
+    .audience .icon-tile { grid-row: 1 / span 2; align-self: center; margin: 0; width: 2.75rem; height: 2.75rem; }
+    .audience__title { align-self: end; }
+    .audience__text { font-size: 0.925rem; max-width: none; align-self: start; }
+    /* hero: tiles above the headline */
+    .hero-cards { order: 0; margin: 0 0 1.75rem; height: clamp(12.5rem, 56vw, 17rem); }
+    .hero-card { width: min(52%, 15rem); }
+    .hero-card--hw { margin-left: calc(min(52%, 15rem) / -2); }
+    .hero-card--sw { top: 40%; left: -3%; }
+    .hero-card--pt { top: 40%; right: -3%; z-index: 2; }
     .stats { gap: 1.75rem 0.75rem; }
     .stat__label { font-size: 0.925rem; }
-    /* glass cards: shorter, image beside the end */
-    .glass { min-height: 0; }
-    .glass__img { max-height: 9rem; max-width: 62%; }
+    /* glass cards */
+    .glass { min-height: 15.5rem; }
+    .glass__img { width: 52%; bottom: -6%; right: -4%; }
+    .glass--img-top .glass__img { width: 48%; top: -8%; right: -3%; }
+    .glass__text { max-width: 58%; }
+    .glass--img-top .glass__text { max-width: none; }
+    .glass--img-top { padding-top: 8.5rem; }
     .around__title { font-size: clamp(1.9rem, 1.2rem + 3vw, 2.4rem); }
+    /* how it works: number before the headline */
+    .how-card__num { display: none; }
+    .how-card__n {
+      display: inline-grid; place-items: center; width: 1.6rem; height: 1.6rem; margin-right: 0.55rem; vertical-align: 0.12em;
+      border-radius: 50%; color: #fff; font-size: 0.8125rem; font-weight: 600; letter-spacing: 0;
+      background: radial-gradient(circle at 35% 30%, #8fd28a, #3c7b45 70%);
+    }
     .how-card__img { max-height: 7rem; }
     .how__list { gap: 0.5rem; }
   }
+  .how-card__n { display: none; }
+  @media (max-width: 639.98px) { .how-card__n { display: inline-grid; } }
+
+  /* vertical neon pipe behind the pillars (phones/tablets) */
+  .pillars__vpipe { position: absolute; left: 50%; top: -2rem; bottom: -2rem; width: 7rem; height: calc(100% + 4rem); transform: translateX(-50%); pointer-events: none; overflow: visible; }
+  .pillars__vpipe path { fill: none; vector-effect: non-scaling-stroke; stroke-linecap: round; }
+  .vp-glass { stroke: rgba(141,220,120,0.28); stroke-width: 16; }
+  .vp-core { stroke: rgba(93,200,74,0.55); stroke-width: 3; }
+  .vp-light { stroke: #7dff5c; stroke-width: 4; stroke-dasharray: 14 86; filter: drop-shadow(0 0 6px rgba(93,255,74,0.9)); animation: vp-run 5s linear infinite; }
+  @keyframes vp-run { from { stroke-dashoffset: 100; } to { stroke-dashoffset: 0; } }
+  @media (min-width: 900px) { .pillars__vpipe { display: none; } }
+  @media (prefers-reduced-motion: reduce) { .vp-light { animation: none; display: none; } }
 </style>
