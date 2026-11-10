@@ -144,7 +144,22 @@ function initLoops() {
     }
     render();
     if (!progress && stage) {
-      const measure = () => items.forEach((el) => {
+      const measure = () => {
+        // card height = tallest review, capped – short reviews no longer leave a huge empty box
+        const cap = parseFloat(getComputedStyle(stage).getPropertyValue('--rh-max')) * parseFloat(getComputedStyle(document.documentElement).fontSize) || 300;
+        let tallest = 0;
+        items.forEach((el) => {
+          const b = el.querySelector<HTMLButtonElement>('[data-review-more]');
+          const was = b?.hidden; if (b) b.hidden = true;
+          el.style.height = 'auto';
+          tallest = Math.max(tallest, el.offsetHeight);
+          el.style.height = '';
+          if (b) b.hidden = !!was;
+        });
+        stage.style.setProperty('--rh', `${Math.ceil(Math.min(tallest, cap))}px`);
+        clampAll();
+      };
+      const clampAll = () => items.forEach((el) => {
         const t = el.querySelector<HTMLElement>('[data-review-text]');
         const b = el.querySelector<HTMLButtonElement>('[data-review-more]');
         if (!t || !b || el.classList.contains('is-open')) return;

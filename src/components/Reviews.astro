@@ -44,12 +44,14 @@ const n = reviews.length;
     max-width: 30rem; margin-inline: auto;
   }
   /* all cards share one fixed height → nothing jumps when reviews change */
-  .reviews__carousel { --rh: 19rem; }
+  .reviews__carousel { --rh-max: 19; --rh: 19rem; }
   :global(.js) .reviews__stage { height: var(--rh); transition: height 0.5s var(--ease-out); }
   :global(.js) .reviews__stage.is-expanded { height: var(--open-h, var(--rh)); }
   :global(.js) .review { align-self: start; height: var(--rh); display: flex; flex-direction: column; }
   :global(.js) .review.is-open { height: auto; }
   :global(.js) .review__text { flex: 1; min-height: 0; overflow: hidden; }
+  :global(.js) .review:not(.is-clamped) { justify-content: center; }
+  :global(.js) .review:not(.is-clamped) .review__text { flex: 0 0 auto; }
   :global(.js) .review.is-clamped:not(.is-open) .review__text {
     mask-image: linear-gradient(180deg, #000 72%, transparent);
     -webkit-mask-image: linear-gradient(180deg, #000 72%, transparent);
@@ -60,7 +62,7 @@ const n = reviews.length;
   }
   .review__more[hidden] { display: none; }
   .review:not([data-pos="0"]) .review__more { visibility: hidden; }
-  @media (max-width: 639.98px) { .reviews__carousel { --rh: 21rem; } }
+  @media (max-width: 639.98px) { .reviews__carousel { --rh-max: 16; --rh: 16rem; } }
   .review {
     grid-area: 1 / 1; align-self: center;
     background: var(--c-sage); border: 1px solid var(--c-line); border-radius: var(--radius);
