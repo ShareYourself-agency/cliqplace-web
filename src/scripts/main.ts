@@ -95,7 +95,12 @@ function initLoops() {
         }
       });
       if (list) list.style.transform = `translateX(${-active * 100}%)`;
-      if (!progress && stage) stage.style.setProperty('--stage-h', `${items[active].offsetHeight}px`);
+      if (!progress && stage) {
+        // collapse any expanded review when the slide changes
+        items.forEach((el) => el.classList.remove('is-open'));
+        stage.classList.remove('is-expanded');
+        items.forEach((el) => { const b = el.querySelector<HTMLButtonElement>('[data-review-more]'); if (b) b.textContent = 'Číst celou recenzi'; });
+      }
       if (range) {
         range.value = String(active);
         range.style.setProperty('--p', `${n > 1 ? (active / (n - 1)) * 100 : 0}%`);
@@ -138,7 +143,30 @@ function initLoops() {
       new IntersectionObserver(([en]) => { visible = en.isIntersecting; }, { threshold: 0.35 }).observe(root);
     }
     render();
-    if (!progress && stage && 'ResizeObserver' in window) new ResizeObserver(() => render()).observe(stage);
+    if (!progress && stage) {
+      const measure = () => items.forEach((el) => {
+        const t = el.querySelector<HTMLElement>('[data-review-text]');
+        const b = el.querySelector<HTMLButtonElement>('[data-review-more]');
+        if (!t || !b || el.classList.contains('is-open')) return;
+        const clamped = t.scrollHeight > t.clientHeight + 2;
+        el.classList.toggle('is-clamped', clamped);
+        b.hidden = !clamped;
+      });
+      measure();
+      addEventListener('resize', measure);
+      document.fonts?.ready.then(measure);
+      items.forEach((el) => {
+        const b = el.querySelector<HTMLButtonElement>('[data-review-more]');
+        b?.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const open = !el.classList.contains('is-open');
+          el.classList.toggle('is-open', open);
+          b.textContent = open ? 'Sbalit' : 'Číst celou recenzi';
+          if (open) { stage.style.setProperty('--open-h', `${el.offsetHeight}px`); stage.classList.add('is-expanded'); userPausedUntil = Date.now() + 120000; }
+          else { stage.classList.remove('is-expanded'); userPausedUntil = Date.now() + interval; }
+        });
+      });
+    }
 
     // steps: driven by scroll position (1 → 4 while the pinned box is on screen)
     if (root.hasAttribute('data-scroll-steps')) {

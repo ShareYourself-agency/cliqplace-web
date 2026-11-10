@@ -18,10 +18,11 @@ const n = reviews.length;
               <h3 class="review__name">{r.name}</h3>
               <span class="review__tag">{r.type}</span>
             </header>
-            <div class="review__text">
+            <div class="review__text" data-review-text>
               {r.text.map((p) => <p>{p}</p>)}
+              {r.person && <p class="review__person">— {r.person}</p>}
             </div>
-            {r.person && <p class="review__person">— {r.person}</p>}
+            <button type="button" class="review__more" data-review-more hidden>Číst celou recenzi</button>
           </article>
         ))}
       </div>
@@ -42,25 +43,36 @@ const n = reviews.length;
     display: grid; position: relative; touch-action: pan-y;
     max-width: 30rem; margin-inline: auto;
   }
-  /* JS sets the stage to the active card's height → slider sits right under it */
-  :global(.js) .reviews__stage { height: var(--stage-h, auto); transition: height 0.6s var(--ease-out); }
-  :global(.js) .review { align-self: start; }
-  :global(.js) .review:not([data-pos='0']) {
-    max-height: var(--stage-h, none); overflow: hidden;
-    mask-image: linear-gradient(180deg, #000 70%, transparent);
-    -webkit-mask-image: linear-gradient(180deg, #000 70%, transparent);
+  /* all cards share one fixed height → nothing jumps when reviews change */
+  .reviews__carousel { --rh: 19rem; }
+  :global(.js) .reviews__stage { height: var(--rh); transition: height 0.5s var(--ease-out); }
+  :global(.js) .reviews__stage.is-expanded { height: var(--open-h, var(--rh)); }
+  :global(.js) .review { align-self: start; height: var(--rh); display: flex; flex-direction: column; }
+  :global(.js) .review.is-open { height: auto; }
+  :global(.js) .review__text { flex: 1; min-height: 0; overflow: hidden; }
+  :global(.js) .review.is-clamped:not(.is-open) .review__text {
+    mask-image: linear-gradient(180deg, #000 72%, transparent);
+    -webkit-mask-image: linear-gradient(180deg, #000 72%, transparent);
   }
+  .review__more {
+    align-self: flex-start; margin-top: 0.75rem; padding: 0.35rem 0; border: 0; background: none; cursor: pointer;
+    font-size: 0.875rem; font-weight: 600; color: var(--c-green); text-decoration: underline; text-underline-offset: 3px;
+  }
+  .review__more[hidden] { display: none; }
+  .review:not([data-pos="0"]) .review__more { visibility: hidden; }
+  @media (max-width: 639.98px) { .reviews__carousel { --rh: 21rem; } }
   .review {
     grid-area: 1 / 1; align-self: center;
     background: var(--c-sage); border: 1px solid var(--c-line); border-radius: var(--radius);
     padding: clamp(1.25rem, 1rem + 1vw, 1.75rem);
-    transition: transform 0.7s var(--ease-out), opacity 0.7s var(--ease-out), filter 0.7s var(--ease-out);
+    transition: transform 0.65s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s ease;
+    will-change: transform, opacity; backface-visibility: hidden;
     transform: translateX(0) scale(0.84); opacity: 0; pointer-events: none;
     box-shadow: 0 20px 50px -30px rgba(13, 21, 19, 0.35);
     user-select: none;
   }
   .review[data-pos='0'] { opacity: 1; transform: none; z-index: 3; pointer-events: auto; user-select: text; }
-  .review[data-pos='-1'], .review[data-pos='1'] { opacity: 0.85; z-index: 2; pointer-events: auto; cursor: pointer; filter: saturate(0.85); }
+  .review[data-pos='-1'], .review[data-pos='1'] { opacity: 0.8; z-index: 2; pointer-events: auto; cursor: pointer; }
   .review[data-pos='-1'] { transform: translateX(-46%) translateY(3%) scale(0.88); }
   .review[data-pos='1'] { transform: translateX(46%) translateY(3%) scale(0.88); }
   .review[data-pos='-1'] .review__text, .review[data-pos='1'] .review__text { opacity: 0.55; }
@@ -70,13 +82,17 @@ const n = reviews.length;
     font-size: 0.8125rem; color: var(--c-text); padding: 0.25rem 0.625rem; border-radius: 99px;
     border: 1px solid rgba(54, 93, 63, 0.45); background: rgba(255,255,255,0.35);
   }
-  .review__text { display: grid; gap: 0.55rem; color: var(--c-text); line-height: 1.5; font-size: 0.975rem; transition: opacity 0.5s; }
+  .review__text { display: flex; flex-direction: column; gap: 0.55rem; color: var(--c-text); line-height: 1.5; font-size: 0.975rem; }
   .review__person { margin-top: 1rem; font-size: 0.875rem; color: var(--c-green); font-weight: 500; }
 
   .slidebar { max-width: 30rem; margin: 1.75rem auto 0; }
 
   @media (max-width: 639.98px) {
-    .review[data-pos='-1'] { transform: translateX(-60%) scale(0.9); opacity: 0; pointer-events: none; }
-    .review[data-pos='1'] { transform: translateX(60%) scale(0.9); opacity: 0; pointer-events: none; }
+    /* phones: simple crossfade with a small slide – no scaling */
+    .review { transform: none; }
+    .review[data-pos='-1'] { transform: translateX(-12%); opacity: 0; pointer-events: none; }
+    .review[data-pos='1'] { transform: translateX(12%); opacity: 0; pointer-events: none; }
+    .review[data-pos='2'] { transform: translateX(12%); }
+    .review[data-pos='-2'] { transform: translateX(-12%); }
   }
 </style>
