@@ -148,27 +148,33 @@ function initLoops() {
         // card height = tallest review, capped – short reviews no longer leave a huge empty box
         const cap = parseFloat(getComputedStyle(stage).getPropertyValue('--rh-max')) * parseFloat(getComputedStyle(document.documentElement).fontSize) || 300;
         let tallest = 0;
+        const nat = new Map<HTMLElement, number>();
         items.forEach((el) => {
           const b = el.querySelector<HTMLButtonElement>('[data-review-more]');
           const was = b?.hidden; if (b) b.hidden = true;
           el.style.height = 'auto';
+          nat.set(el, el.offsetHeight);
           tallest = Math.max(tallest, el.offsetHeight);
           el.style.height = '';
           if (b) b.hidden = !!was;
         });
-        stage.style.setProperty('--rh', `${Math.ceil(Math.min(tallest, cap))}px`);
-        clampAll();
+        const rh = Math.ceil(Math.min(tallest, cap));
+        stage.style.setProperty('--rh', `${rh}px`);
+        items.forEach((el) => {
+          const b = el.querySelector<HTMLButtonElement>('[data-review-more]');
+          if (!b || el.classList.contains('is-open')) return;
+          const clamped = (nat.get(el) || 0) > rh + 1;
+          el.classList.toggle('is-clamped', clamped);
+          b.hidden = !clamped;
+        });
+        if (stage.classList.contains('is-expanded')) {
+          const open = items.find((el) => el.classList.contains('is-open'));
+          if (open) stage.style.setProperty('--open-h', `${open.offsetHeight}px`);
+        }
       };
-      const clampAll = () => items.forEach((el) => {
-        const t = el.querySelector<HTMLElement>('[data-review-text]');
-        const b = el.querySelector<HTMLButtonElement>('[data-review-more]');
-        if (!t || !b || el.classList.contains('is-open')) return;
-        const clamped = t.scrollHeight > t.clientHeight + 2;
-        el.classList.toggle('is-clamped', clamped);
-        b.hidden = !clamped;
-      });
       measure();
-      addEventListener('resize', measure);
+      let lastW = innerWidth;
+      addEventListener('resize', () => { if (innerWidth !== lastW) { lastW = innerWidth; measure(); } });
       document.fonts?.ready.then(measure);
       items.forEach((el) => {
         const b = el.querySelector<HTMLButtonElement>('[data-review-more]');
