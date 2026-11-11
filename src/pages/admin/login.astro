@@ -1,24 +1,31 @@
 ---
 import Admin from '../../layouts/Admin.astro';
-import { authConfigured, checkPassword, isAuthed, loginBlocked, noteFail, startSession } from '../../lib/auth';
+import { adminReady, currentUser, login, loginBlocked, noteFail, startSession } from '../../lib/auth';
 export const prerender = false;
 
-if (isAuthed(Astro.cookies)) return Astro.redirect('/admin', 303);
-
 let error = '';
-if (!authConfigured()) error = 'Administrace ještě není nastavená (chybí ADMIN_PASSWORD / ADMIN_SECRET).';
-else if (Astro.request.method === 'POST') {
-  const ip = (Astro.request.headers.get('x-forwarded-for') || '').split(',')[0].trim() || Astro.clientAddress || '?';
-  if (loginBlocked(ip)) error = 'Příliš mnoho pokusů. Zkuste to za 15 minut.';
-  else {
+let email = '';
+if (!adminReady()) error = 'Administrace ještě není připojená k databázi.';
+else {
+  try {
+    if (await currentUser(Astro.cookies)) return Astro.redirect('/admin', 303);
+  } catch {}
+  if (Astro.request.method === 'POST') {
+    const ip = (Astro.request.headers.get('x-forwarded-for') || '').split(',')[0].trim() || Astro.clientAddress || '?';
     const fd = await Astro.request.formData();
-    if (checkPassword(String(fd.get('password') || ''))) {
-      startSession(Astro.cookies, Astro.url.protocol === 'https:');
-      return Astro.redirect('/admin', 303);
+    email = String(fd.get('email') || '').trim().slice(0, 200);
+    if (loginBlocked(ip) || loginBlocked(email.toLowerCase())) error = 'Příliš mnoho pokusů. Zkuste to za 15 minut.';
+    else {
+      const user = await login(email, String(fd.get('password') || ''));
+      if (user) {
+        await startSession(Astro.cookies, user.id, Astro.url.protocol === 'https:');
+        return Astro.redirect('/admin', 303);
+      }
+      noteFail(ip);
+      noteFail(email.toLowerCase());
+      await new Promise((r) => setTimeout(r, 500));
+      error = 'Nesprávný e-mail nebo heslo.';
     }
-    noteFail(ip);
-    await new Promise((r) => setTimeout(r, 600));
-    error = 'Špatné heslo.';
   }
 }
 ---
@@ -28,11 +35,15 @@ else if (Astro.request.method === 'POST') {
       <p class="eyebrow">cliqplace / leads</p>
       <h1 class="h1">Přihlášení</h1>
       <label class="login__field">
+        <span class="mono muted">E-mail</span>
+        <input class="input" type="email" name="email" value={email} autocomplete="username" required autofocus />
+      </label>
+      <label class="login__field">
         <span class="mono muted">Heslo</span>
-        <input class="input" type="password" name="password" autocomplete="current-password" required autofocus />
+        <input class="input" type="password" name="password" autocomplete="current-password" required />
       </label>
       {error && <p class="login__err mono">{error}</p>}
-      <button class="btn" type="submit">Vstoupit</button>
+      <button class="btn" type="submit">Přihlásit se</button>
     </form>
   </main>
 </Admin>
