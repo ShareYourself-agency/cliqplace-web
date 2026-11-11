@@ -1,7 +1,8 @@
 ---
 import Admin from '../../layouts/Admin.astro';
-import { addUser, EMAIL_RE, listUsers, passwordProblem, removeUser, setPassword } from '../../lib/auth';
-import { ago, fmtDateTime } from '../../lib/format';
+import { addUser, EMAIL_RE, listUsers, passwordProblem, removeUser, setPassword, setName } from '../../lib/auth';
+import { db } from '../../lib/db';
+import { ago, fmtDate, initials } from '../../lib/format';
 export const prerender = false;
 
 const me = Astro.locals.user!;
@@ -11,6 +12,7 @@ let err = '';
 if (Astro.request.method === 'POST') {
   const fd = await Astro.request.formData();
   const action = String(fd.get('action') || '');
+  const id = Number(fd.get('id'));
   if (action === 'add') {
     const email = String(fd.get('email') || '').trim();
     const name = String(fd.get('name') || '').trim().slice(0, 80);
@@ -18,89 +20,77 @@ if (Astro.request.method === 'POST') {
     if (!EMAIL_RE.test(email)) err = 'Zadejte platný e-mail.';
     else if (passwordProblem(pw)) err = passwordProblem(pw);
     else if (!(await addUser(email, name, pw))) err = 'Uživatel s tímto e-mailem už existuje.';
-    else msg = `Přístup pro ${email} vytvořen. Pošlete mu e-mail a heslo bezpečnou cestou.`;
+    else msg = `Přístup pro ${email} vytvořen. Pošlete mu přihlašovací e-mail a heslo – po přihlášení si heslo změní v Můj účet.`;
   } else if (action === 'password') {
-    const id = Number(fd.get('id'));
     const pw = String(fd.get('password') || '');
     if (passwordProblem(pw)) err = passwordProblem(pw);
-    else { await setPassword(id, pw); msg = 'Heslo změněno.'; }
+    else { await setPassword(id, pw); msg = 'Heslo nastaveno.'; }
+  } else if (action === 'name') {
+    await setName(id, String(fd.get('name') || '').trim().slice(0, 80));
+    msg = 'Jméno uloženo.';
   } else if (action === 'remove') {
-    const id = Number(fd.get('id'));
     if (id === me.id) err = 'Sami sebe odebrat nemůžete.';
-    else { await removeUser(id); msg = 'Přístup odebrán.'; }
+    else {
+      const s = await db();
+      await s`update leads set owner_id = null where owner_id = ${id}`;
+      await s`update tasks set user_id = null where user_id = ${id} and done_at is null`;
+      await removeUser(id);
+      msg = 'Přístup odebrán, jeho leady jsou teď nepřiřazené.';
+    }
   }
 }
 const team = await listUsers();
+const s = await db();
+const stats = Object.fromEntries((await s<{ owner_id: number; n: number }[]>`select owner_id, count(*)::int as n from leads where deleted_at is null and status not in ('won','lost') and owner_id is not null group by owner_id`).map((r) => [r.owner_id, r.n]));
 ---
 <Admin title="Tým">
-  <section class="head">
-    <p class="eyebrow">Přístupy do administrace</p>
-    <h1 class="h1">Tým</h1>
-  </section>
-
-  {msg && <p class="flash mono">{msg}</p>}
-  {err && <p class="flash flash--err mono">{err}</p>}
-
-  <div class="grid">
-    <section class="panel list">
+  <div class="page-head"><div><p class="eyebrow">Přístupy do CRM</p><h1 class="h1">Tým</h1></div></div>
+  {msg && <p class="flash">{msg}</p>}
+  {err && <p class="flash flash--err">{err}</p>}
+  <div class="grid-2">
+    <section class="panel">
       {team.map((u) => (
-        <div class="user">
-          <div class="user__id">
-            <strong>{u.name || u.email}</strong>
-            <span class="muted">{u.name ? u.email : ''}{u.id === me.id ? (u.name ? ' · ' : '') + 'vy' : ''}</span>
-            <span class="mono faint">{u.last_login ? `naposledy ${ago(u.last_login)}` : 'zatím nepřihlášen'} · od {fmtDateTime(u.created_at)}</span>
+        <div class="block" style="border-top:1px solid var(--line)">
+          <div class="actions" style="justify-content:space-between">
+            <div class="actions">
+              <span class="avatar">{initials(u.name || u.email)}</span>
+              <div>
+                <strong>{u.name || u.email}</strong>{u.id === me.id && <span class="pill" style="margin-left:6px">vy</span>}
+                <div class="mono faint">{u.email} · {stats[u.id] || 0} otevřených leadů · {u.last_login ? `přihlášen ${ago(u.last_login)}` : 'zatím nepřihlášen'} · od {fmtDate(u.created_at)}</div>
+              </div>
+            </div>
           </div>
-          <details class="user__actions">
-            <summary class="ghost">Upravit</summary>
-            <form method="post" class="row-form">
-              <input type="hidden" name="action" value="password" /><input type="hidden" name="id" value={u.id} />
-              <input class="input" type="password" name="password" placeholder="Nové heslo (min. 10 znaků)" autocomplete="new-password" required minlength="10" />
-              <button class="ghost" type="submit">Nastavit heslo</button>
-            </form>
-            {u.id !== me.id && (
-              <form method="post" class="row-form">
-                <input type="hidden" name="action" value="remove" /><input type="hidden" name="id" value={u.id} />
-                <button class="ghost ghost--danger" type="submit">Odebrat přístup</button>
+          <details>
+            <summary class="mono link" style="cursor:pointer;display:inline-block">Upravit</summary>
+            <div class="form-grid" style="margin-top:12px">
+              <form method="post" class="field">
+                <span>Jméno</span>
+                <input type="hidden" name="action" value="name" /><input type="hidden" name="id" value={u.id} />
+                <div class="actions"><input class="input" style="flex:1" name="name" value={u.name} /><button class="btn btn--ghost btn--sm" type="submit">Uložit</button></div>
               </form>
-            )}
+              <form method="post" class="field">
+                <span>Nastavit nové heslo</span>
+                <input type="hidden" name="action" value="password" /><input type="hidden" name="id" value={u.id} />
+                <div class="actions"><input class="input" style="flex:1" type="password" name="password" minlength="10" required autocomplete="new-password" placeholder="min. 10 znaků" /><button class="btn btn--ghost btn--sm" type="submit">Nastavit</button></div>
+              </form>
+              {u.id !== me.id && (
+                <form method="post" class="full" data-confirm={`Odebrat přístup pro ${u.email}?`}>
+                  <input type="hidden" name="action" value="remove" /><input type="hidden" name="id" value={u.id} />
+                  <button class="btn btn--danger btn--sm" type="submit">Odebrat přístup</button>
+                </form>
+              )}
+            </div>
           </details>
         </div>
       ))}
     </section>
-
-    <section class="panel add">
-      <p class="eyebrow">Přidat člověka</p>
-      <form method="post" class="add__form">
-        <input type="hidden" name="action" value="add" />
-        <label><span class="mono muted">Jméno</span><input class="input" name="name" maxlength="80" placeholder="Jan Novák" /></label>
-        <label><span class="mono muted">E-mail (přihlašovací)</span><input class="input" type="email" name="email" required autocomplete="off" /></label>
-        <label><span class="mono muted">Heslo (min. 10 znaků)</span><input class="input" type="password" name="password" required minlength="10" autocomplete="new-password" /></label>
-        <button class="btn" type="submit">Vytvořit přístup</button>
-      </form>
-    </section>
+    <form method="post" class="panel block">
+      <h2 class="h2">Přidat člověka</h2>
+      <input type="hidden" name="action" value="add" />
+      <label class="field"><span>Jméno</span><input class="input" name="name" maxlength="80" placeholder="Jan Novák" /></label>
+      <label class="field"><span>Přihlašovací e-mail</span><input class="input" type="email" name="email" required autocomplete="off" /></label>
+      <label class="field"><span>Heslo (min. 10 znaků)</span><input class="input" type="password" name="password" required minlength="10" autocomplete="new-password" /></label>
+      <div><button class="btn" type="submit">Vytvořit přístup</button></div>
+    </form>
   </div>
 </Admin>
-
-<style>
-  .head { margin-bottom: 24px; }
-  .head .eyebrow { margin-bottom: 8px; }
-  .flash { padding: 12px 16px; border: 1px solid rgba(199,255,156,.35); border-radius: 8px; color: var(--lime); margin-bottom: 16px; }
-  .flash--err { color: #ff9b9b; border-color: rgba(255,155,155,.35); }
-  .grid { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 16px; align-items: start; }
-  @media (max-width: 960px) { .grid { grid-template-columns: 1fr; } }
-  .list { overflow: hidden; }
-  .user { display: flex; justify-content: space-between; align-items: start; gap: 16px; padding: 16px 20px; border-top: 1px solid var(--line); flex-wrap: wrap; }
-  .user:first-child { border-top: 0; }
-  .user__id { display: grid; gap: 2px; min-width: 0; }
-  .user__actions { display: grid; gap: 8px; justify-items: end; }
-  .user__actions summary { list-style: none; }
-  .user__actions summary::-webkit-details-marker { display: none; }
-  .user__actions[open] { width: 100%; justify-items: stretch; }
-  .user__actions[open] summary { justify-self: end; }
-  .row-form { display: flex; gap: 8px; }
-  .row-form .input { flex: 1; }
-  .add { padding: 20px; display: grid; gap: 14px; }
-  .add__form { display: grid; gap: 12px; justify-items: start; }
-  .add__form label { display: grid; gap: 6px; width: 100%; }
-  .ghost--danger { color: #ff9b9b; border-color: rgba(255,155,155,.35); }
-</style>

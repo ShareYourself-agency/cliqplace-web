@@ -23,7 +23,7 @@ else {
       }
       noteFail(ip);
       noteFail(email.toLowerCase());
-      await new Promise((r) => setTimeout(r, 500));
+      await new Promise((r) => setTimeout(r, 400));
       error = 'Nesprávný e-mail nebo heslo.';
     }
   }
@@ -31,30 +31,13 @@ else {
 ---
 <Admin title="Přihlášení" bare>
   <main class="login">
-    <form class="login__card panel" method="post">
-      <p class="eyebrow">cliqplace / leads</p>
+    <form class="login__card panel" method="post" data-native>
+      <p class="eyebrow">cliqplace / crm</p>
       <h1 class="h1">Přihlášení</h1>
-      <label class="login__field">
-        <span class="mono muted">E-mail</span>
-        <input class="input" type="email" name="email" value={email} autocomplete="username" required autofocus />
-      </label>
-      <label class="login__field">
-        <span class="mono muted">Heslo</span>
-        <input class="input" type="password" name="password" autocomplete="current-password" required />
-      </label>
+      <label class="field"><span>E-mail</span><input class="input" type="email" name="email" value={email} autocomplete="username" required autofocus /></label>
+      <label class="field"><span>Heslo</span><input class="input" type="password" name="password" autocomplete="current-password" required /></label>
       {error && <p class="login__err mono">{error}</p>}
       <button class="btn" type="submit">Přihlásit se</button>
     </form>
   </main>
 </Admin>
-
-<style>
-  .login { min-height: 100dvh; display: grid; place-items: center; padding: 24px; }
-  .login__card { width: min(100%, 380px); padding: 32px; display: grid; gap: 18px; position: relative; overflow: hidden; }
-  .login__card::before {
-    content: ''; position: absolute; inset: 0 0 auto; height: 1px;
-    background: linear-gradient(90deg, transparent, var(--neon), transparent);
-  }
-  .login__field { display: grid; gap: 8px; }
-  .login__err { color: #ff9b9b; }
-</style>

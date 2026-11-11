@@ -1,17 +1,27 @@
 ---
-interface Props { title: string; bare?: boolean }
-const { title, bare = false } = Astro.props;
-const path = Astro.url.pathname;
-const nav = [
-  { href: '/admin', label: 'Leady' },
-  { href: '/admin?view=pipeline', label: 'Pipeline' },
-  { href: '/admin/tym', label: 'Tým' },
-];
-const view = Astro.url.searchParams.get('view');
+import '../styles/admin.css';
+import { db, hasDb } from '../lib/db';
+interface Props { title: string; bare?: boolean; section?: string }
+const { title, bare = false, section = '' } = Astro.props;
 const me = Astro.locals.user;
-const active = (href: string) =>
-  href === '/admin/tym' ? path === '/admin/tym' :
-  href.includes('pipeline') ? view === 'pipeline' : (path === '/admin' && view !== 'pipeline') || path.startsWith('/admin/lead');
+let counts = { tasks: 0, fresh: 0 };
+if (!bare && me && hasDb()) {
+  try {
+    const s = await db();
+    const [c] = await s<{ tasks: number; fresh: number }[]>`
+      select
+        (select count(*)::int from tasks t join leads l on l.id = t.lead_id where t.done_at is null and l.deleted_at is null and t.user_id = ${me.id} and t.due_at < date_trunc('day', now() at time zone 'Europe/Prague') + interval '1 day') as tasks,
+        (select count(*)::int from leads where status = 'new' and deleted_at is null) as fresh`;
+    counts = c;
+  } catch {}
+}
+const nav = [
+  { id: 'prehled', href: '/admin', label: 'Přehled' },
+  { id: 'leady', href: '/admin/leady', label: 'Leady', count: counts.fresh },
+  { id: 'pipeline', href: '/admin/pipeline', label: 'Pipeline' },
+  { id: 'ukoly', href: '/admin/ukoly', label: 'Úkoly', count: counts.tasks },
+];
+const initials = (me?.name || me?.email || '?').split(/[\s@.]+/).filter(Boolean).slice(0, 2).map((p) => p[0]).join('');
 ---
 <!doctype html>
 <html lang="cs">
@@ -19,118 +29,42 @@ const active = (href: string) =>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex, nofollow" />
-    <title>{title} · Cliqplace Leads</title>
+    <title>{title} · Cliqplace CRM</title>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="preload" href="/fonts/InterTight-var.woff2" as="font" type="font/woff2" crossorigin />
   </head>
-  <body>
+  <body data-section={section}>
+    <div class="progress" data-progress></div>
     {bare ? <slot /> : (
       <div class="app">
         <header class="top">
-          <a class="brand" href="/admin"><span class="brand__mark">cliqplace</span><span class="brand__sub">/leads</span></a>
-          <nav class="tabs">
-            {nav.map((n) => <a href={n.href} class:list={['tab', { 'is-on': active(n.href) }]}>{n.label}</a>)}
-            <a class="tab" href="/admin/export.csv">Export CSV</a>
+          <a class="brand" href="/admin">cliqplace<span class="brand__sub">/crm</span></a>
+          <nav class="nav" aria-label="Hlavní">
+            {nav.map((n) => (
+              <a href={n.href} class:list={[{ 'is-on': section === n.id }]}>{n.label}{n.count ? <span class="count">{n.count}</span> : null}</a>
+            ))}
           </nav>
-          <div class="me">
-            {me && <span class="mono faint me__mail">{me.email}</span>}
-            <form method="post" action="/admin/logout"><button class="ghost" type="submit">Odhlásit</button></form>
-          </div>
+          <a class="btn btn--lime btn--sm" href="/admin/lead/novy">+ Nový lead</a>
+          <details class="menu" data-menu>
+            <summary><span class="avatar">{initials}</span><span class="menu__name mono">{me?.name || me?.email}</span></summary>
+            <div class="menu__list">
+              <span class="mono faint" style="padding:6px 10px">{me?.email}</span>
+              <hr />
+              <a href="/admin/ucet">Můj účet a heslo</a>
+              <a href="/admin/tym">Tým a přístupy</a>
+              <a href="/admin/zalohy">Zálohy</a>
+              <a href="/admin/export.csv" data-native>Export CSV</a>
+              <a href="/admin/leady?kos=1">Koš</a>
+              <hr />
+              <form method="post" action="/admin/logout" data-native><button type="submit">Odhlásit</button></form>
+            </div>
+          </details>
         </header>
-        <main class="main"><slot /></main>
+        <main class="main" data-main><slot /></main>
       </div>
     )}
+    <script>
+      import '../scripts/admin';
+    </script>
   </body>
 </html>
-
-<style is:global>
-  @font-face { font-family: 'Inter Tight'; src: url('/fonts/InterTight-var.woff2') format('woff2'); font-weight: 100 900; font-display: swap; }
-  :root {
-    --bg: #070b0a; --bg-2: #0c1311; --bg-3: #111a17; --line: #1c2925; --line-2: #26372f;
-    --tx: #e8efe9; --tx-2: #9aa9a1; --tx-3: #63736b;
-    --lime: #c7ff9c; --neon: #5dff4a;
-    --mono: ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
-    --sans: 'Inter Tight', system-ui, sans-serif;
-    color-scheme: dark;
-  }
-  * { box-sizing: border-box; margin: 0; }
-  html { background: var(--bg); }
-  body {
-    font-family: var(--sans); color: var(--tx); font-size: 14px; line-height: 1.5; min-height: 100dvh;
-    background:
-      radial-gradient(60rem 30rem at 85% -10%, rgba(93, 255, 74, 0.07), transparent 60%),
-      var(--bg);
-    background-attachment: fixed;
-    -webkit-font-smoothing: antialiased;
-  }
-  body::before {
-    content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none;
-    background-image: linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
-    background-size: 56px 56px;
-    mask-image: radial-gradient(70rem 40rem at 70% 0%, #000, transparent 75%);
-  }
-  a { color: inherit; text-decoration: none; }
-  button, input, select, textarea { font: inherit; color: inherit; }
-  .mono { font-family: var(--mono); font-size: 12px; letter-spacing: 0.02em; }
-  .muted { color: var(--tx-2); }
-  .faint { color: var(--tx-3); }
-
-  .app { max-width: 1440px; margin: 0 auto; padding: 0 clamp(16px, 3vw, 40px) 64px; }
-  .top {
-    position: sticky; top: 0; z-index: 10; display: flex; align-items: center; gap: 24px;
-    padding: 18px 0; border-bottom: 1px solid var(--line);
-    background: linear-gradient(var(--bg) 70%, transparent); backdrop-filter: blur(8px);
-  }
-  .brand { display: flex; align-items: baseline; gap: 2px; font-weight: 650; letter-spacing: -0.02em; font-size: 17px; }
-  .brand__sub { font-family: var(--mono); font-size: 13px; color: var(--neon); font-weight: 500; }
-  .tabs { display: flex; gap: 4px; margin-right: auto; overflow-x: auto; }
-  .tab {
-    font-family: var(--mono); font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em;
-    padding: 8px 12px; border-radius: 6px; color: var(--tx-2); white-space: nowrap; transition: color .2s, background .2s;
-  }
-  .tab:hover { color: var(--tx); background: var(--bg-3); }
-  .tab.is-on { color: var(--bg); background: var(--lime); }
-  .ghost {
-    font-family: var(--mono); font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em;
-    background: none; border: 1px solid var(--line-2); border-radius: 6px; padding: 7px 12px; color: var(--tx-2); cursor: pointer;
-  }
-  .ghost:hover { color: var(--tx); border-color: var(--tx-3); }
-  .main { padding-top: 28px; }
-  .me { display: flex; align-items: center; gap: 12px; }
-  @media (max-width: 900px) { .me__mail { display: none; } }
-  @media (max-width: 640px) {
-    .top { flex-wrap: wrap; gap: 12px 16px; padding: 14px 0 10px; }
-    .top .me { margin-left: auto; }
-    .tabs { order: 3; width: 100%; margin-right: 0; }
-  }
-
-  .h1 { font-size: clamp(26px, 2.4vw, 34px); font-weight: 600; letter-spacing: -0.035em; line-height: 1.1; }
-  .eyebrow { font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--tx-3); }
-
-  .panel { background: color-mix(in srgb, var(--bg-2) 88%, transparent); border: 1px solid var(--line); border-radius: 12px; }
-
-  .tag {
-    display: inline-flex; align-items: center; gap: 7px; font-family: var(--mono); font-size: 11px; text-transform: uppercase;
-    letter-spacing: 0.08em; padding: 4px 9px 4px 8px; border-radius: 999px; border: 1px solid var(--line-2); color: var(--tx-2); white-space: nowrap;
-  }
-  .tag::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
-  .tag--new { color: var(--neon); border-color: rgba(93, 255, 74, .35); box-shadow: 0 0 14px rgba(93, 255, 74, .12) inset; }
-  .tag--contacted { color: #8fd3ff; border-color: rgba(143, 211, 255, .3); }
-  .tag--demo { color: #c9a6ff; border-color: rgba(201, 166, 255, .3); }
-  .tag--offer { color: #ffd479; border-color: rgba(255, 212, 121, .3); }
-  .tag--won { color: var(--bg); background: var(--lime); border-color: var(--lime); }
-  .tag--won::before { background: var(--bg); }
-  .tag--lost { color: var(--tx-3); }
-
-  .btn {
-    display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 0; cursor: pointer;
-    background: var(--lime); color: #07110a; font-weight: 600; border-radius: 8px; padding: 10px 16px; transition: filter .2s, box-shadow .2s;
-  }
-  .btn:hover { filter: brightness(1.05); box-shadow: 0 0 24px rgba(93, 255, 74, .25); }
-  .input {
-    width: 100%; background: var(--bg); border: 1px solid var(--line-2); border-radius: 8px; padding: 10px 12px; outline: none;
-    transition: border-color .2s, box-shadow .2s;
-  }
-  .input:focus { border-color: var(--lime); box-shadow: 0 0 0 3px rgba(199, 255, 156, .12); }
-  ::selection { background: var(--lime); color: #07110a; }
-</style>

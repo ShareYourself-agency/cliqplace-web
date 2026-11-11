@@ -155,3 +155,13 @@ export function noteFail(key: string) {
   fails.set(key, list);
   if (fails.size > 2000) fails.clear();
 }
+
+export async function setName(id: number, name: string) {
+  const s = await users();
+  await s`update admin_users set name = ${name} where id = ${id}`;
+}
+export async function checkUserPassword(id: number, pw: string) {
+  const s = await users();
+  const [u] = await s<{ pass_hash: string }[]>`select pass_hash from admin_users where id = ${id}`;
+  return u ? verifyPassword(pw, u.pass_hash) : false;
+}

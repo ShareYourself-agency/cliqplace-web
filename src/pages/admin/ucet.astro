@@ -1,0 +1,48 @@
+---
+import Admin from '../../layouts/Admin.astro';
+import { checkUserPassword, passwordProblem, setPassword, setName } from '../../lib/auth';
+export const prerender = false;
+
+const me = Astro.locals.user!;
+let msg = '';
+let err = '';
+if (Astro.request.method === 'POST') {
+  const fd = await Astro.request.formData();
+  const action = String(fd.get('action') || '');
+  if (action === 'name') {
+    await setName(me.id, String(fd.get('name') || '').trim().slice(0, 80));
+    msg = 'Jméno uloženo.';
+    me.name = String(fd.get('name') || '').trim().slice(0, 80);
+  } else if (action === 'password') {
+    const cur = String(fd.get('current') || '');
+    const pw = String(fd.get('password') || '');
+    const pw2 = String(fd.get('password2') || '');
+    if (!(await checkUserPassword(me.id, cur))) err = 'Současné heslo nesouhlasí.';
+    else if (passwordProblem(pw)) err = passwordProblem(pw);
+    else if (pw !== pw2) err = 'Nová hesla se neshodují.';
+    else { await setPassword(me.id, pw); msg = 'Heslo bylo změněno.'; }
+  }
+}
+---
+<Admin title="Můj účet">
+  <div class="page-head"><div><p class="eyebrow">{me.email}</p><h1 class="h1">Můj účet</h1></div></div>
+  {msg && <p class="flash">{msg}</p>}
+  {err && <p class="flash flash--err">{err}</p>}
+  <div class="grid-2 grid-2--even" style="max-width:980px">
+    <form method="post" class="panel block">
+      <h2 class="h2">Jméno</h2>
+      <input type="hidden" name="action" value="name" />
+      <label class="field"><span>Jak vás uvidí kolegové</span><input class="input" name="name" value={me.name} placeholder="Jan Novák" /></label>
+      <div><button class="btn btn--ghost" type="submit">Uložit</button></div>
+    </form>
+    <form method="post" class="panel block">
+      <h2 class="h2">Změna hesla</h2>
+      <input type="hidden" name="action" value="password" />
+      <input type="email" name="username" value={me.email} autocomplete="username" hidden />
+      <label class="field"><span>Současné heslo</span><input class="input" type="password" name="current" autocomplete="current-password" required /></label>
+      <label class="field"><span>Nové heslo (min. 10 znaků)</span><input class="input" type="password" name="password" autocomplete="new-password" minlength="10" required /></label>
+      <label class="field"><span>Nové heslo znovu</span><input class="input" type="password" name="password2" autocomplete="new-password" minlength="10" required /></label>
+      <div><button class="btn" type="submit">Změnit heslo</button></div>
+    </form>
+  </div>
+</Admin>

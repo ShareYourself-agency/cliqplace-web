@@ -1,0 +1,80 @@
+---
+import Admin from '../../layouts/Admin.astro';
+import { db, hasDb, STAGES, stageProb, type Lead } from '../../lib/db';
+import { listUsers } from '../../lib/auth';
+import { ago, czk, due, initials } from '../../lib/format';
+export const prerender = false;
+
+const me = Astro.locals.user!;
+const owner = Astro.url.searchParams.get('owner') || '';
+const showClosed = Astro.url.searchParams.get('uzavrene') === '1';
+let leads: Lead[] = [];
+let err = '';
+const users = hasDb() ? await listUsers().catch(() => []) : [];
+if (!hasDb()) err = 'Databáze není připojená.';
+else {
+  try {
+    const s = await db();
+    const ownerId = owner === 'me' ? me.id : Number(owner) || 0;
+    leads = await s<Lead[]>`
+      select l.*, u.name as owner_name, u.email as owner_email from leads l left join admin_users u on u.id = l.owner_id
+      where l.deleted_at is null
+        and (${owner === ''} or (${owner === 'none'} and l.owner_id is null) or l.owner_id = ${ownerId})
+        and (${showClosed} or l.status not in ('won','lost') or l.updated_at > now() - interval '30 days')
+      order by l.next_step_at asc nulls last, l.created_at desc limit 800`;
+  } catch (e) {
+    console.error('[admin] pipeline', e);
+    err = 'Nepodařilo se načíst pipeline.';
+  }
+}
+---
+<Admin title="Pipeline" section="pipeline">
+  <div class="page-head">
+    <div><p class="eyebrow">Přetáhněte kartu do jiné fáze</p><h1 class="h1">Pipeline</h1></div>
+    <form class="toolbar" method="get" action="/admin/pipeline" style="margin:0">
+      <select class="select" name="owner" data-autosubmit aria-label="Řeší">
+        <option value="">Řeší: všichni</option>
+        <option value="me" selected={owner === 'me'}>Moje</option>
+        <option value="none" selected={owner === 'none'}>Nepřiřazené</option>
+        {users.map((u) => <option value={u.id} selected={owner === String(u.id)}>{u.name || u.email}</option>)}
+      </select>
+      <select class="select" name="uzavrene" data-autosubmit aria-label="Uzavřené">
+        <option value="">Uzavřené: posledních 30 dní</option>
+        <option value="1" selected={showClosed}>Uzavřené: vše</option>
+      </select>
+    </form>
+  </div>
+  {err ? <div class="panel empty mono">{err}</div> : (
+    <div class="board">
+      {STAGES.map((st) => {
+        const col = leads.filter((l) => l.status === st.id);
+        const sum = col.reduce((a, l) => a + (l.value || 0), 0);
+        const weighted = col.reduce((a, l) => a + ((l.value || 0) * (l.probability ?? stageProb(l.status))) / 100, 0);
+        return (
+          <section class="col" data-stage={st.id}>
+            <header class="col__head">
+              <div><span class={`tag tag--${st.id}`}>{st.label}</span><span class="mono faint">{col.length}</span></div>
+              <span class="mono faint num">{czk(sum)}{st.id !== 'won' && st.id !== 'lost' && sum ? ` · váž. ${czk(Math.round(weighted))}` : ''}</span>
+            </header>
+            <div class="col__list" data-list style="display:grid;gap:8px">
+              {col.map((l) => { const d = due(l.next_step_at); return (
+                <a class="card" href={`/admin/lead/${l.id}`} draggable="true" data-card={l.id}>
+                  <strong class="ell">{l.company || l.name}</strong>
+                  <span class="muted ell">{l.company ? l.name : l.email}</span>
+                  {l.next_step ? <span class="ell" style="font-size:13px">→ {l.next_step}</span> : <span class="mono faint">bez dalšího kroku</span>}
+                  <span class="card__meta">
+                    <span class="actions" style="gap:6px">
+                      {(l as any).owner_name || (l as any).owner_email ? <span class="avatar avatar--sm" title={(l as any).owner_name || (l as any).owner_email}>{initials((l as any).owner_name || (l as any).owner_email)}</span> : null}
+                      {l.next_step_at ? <span class={`pill ${d.tone ? `pill--${d.tone}` : ''}`}>{d.label}</span> : <span class="mono faint">{ago(l.created_at)}</span>}
+                    </span>
+                    <span class="mono num nowrap">{l.value ? czk(l.value) : ''}</span>
+                  </span>
+                </a>
+              ); })}
+            </div>
+          </section>
+        );
+      })}
+    </div>
+  )}
+</Admin>

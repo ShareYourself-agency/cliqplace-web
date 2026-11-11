@@ -1,0 +1,51 @@
+---
+import Admin from '../../../layouts/Admin.astro';
+import { hasDb, insertLead, SEGMENTS, SOURCES, updateLead, logEvent } from '../../../lib/db';
+import { listUsers } from '../../../lib/auth';
+export const prerender = false;
+
+const me = Astro.locals.user!;
+let err = '';
+const users = hasDb() ? await listUsers() : [];
+
+if (Astro.request.method === 'POST' && hasDb()) {
+  const fd = await Astro.request.formData();
+  const v = (k: string, max = 300) => String(fd.get(k) ?? '').trim().slice(0, max);
+  if (!v('company') && !v('name')) err = 'Vyplňte firmu nebo kontaktní osobu.';
+  else {
+    const owner = Number(fd.get('owner_id')) || null;
+    const id = await insertLead(
+      { company: v('company'), name: v('name'), position: v('position'), email: v('email'), phone: v('phone'), segment: v('segment'), city: v('city'), source: v('source') || 'Jiné', needs: v('needs', 5000), owner_id: owner },
+      { userId: me.id, eventText: `Lead založen ručně (${me.name || me.email})` },
+    );
+    const value = v('value').replace(/[^\d]/g, '');
+    if (value) await updateLead(id, { value: Number(value) });
+    if (owner) {
+      const u = users.find((x) => x.id === owner);
+      await logEvent(id, 'assign', `Řeší: ${u?.name || u?.email}`, me.id);
+    }
+    return Astro.redirect(`/admin/lead/${id}`, 303);
+  }
+}
+---
+<Admin title="Nový lead" section="leady">
+  <div class="crumbs"><a href="/admin/leady">← Leady</a></div>
+  <div class="page-head"><div><p class="eyebrow">Ruční založení</p><h1 class="h1">Nový lead</h1></div></div>
+  {err && <p class="flash flash--err">{err}</p>}
+  <form method="post" class="panel block" style="max-width:820px">
+    <div class="form-grid">
+      <label class="field full"><span>Firma / instituce</span><input class="input" name="company" autofocus placeholder="např. Kino Svět Kolín" /></label>
+      <label class="field"><span>Kontaktní osoba</span><input class="input" name="name" /></label>
+      <label class="field"><span>Pozice</span><input class="input" name="position" placeholder="např. ředitelka" /></label>
+      <label class="field"><span>E-mail</span><input class="input" type="email" name="email" /></label>
+      <label class="field"><span>Telefon</span><input class="input" name="phone" /></label>
+      <label class="field"><span>Typ provozu</span><select class="select" name="segment"><option value="">—</option>{SEGMENTS.map((x) => <option>{x}</option>)}</select></label>
+      <label class="field"><span>Město</span><input class="input" name="city" /></label>
+      <label class="field"><span>Zdroj</span><select class="select" name="source">{SOURCES.map((x) => <option selected={x === 'Obchodník – aktivně'}>{x}</option>)}</select></label>
+      <label class="field"><span>Řeší</span><select class="select" name="owner_id">{users.map((u) => <option value={u.id} selected={u.id === me.id}>{u.name || u.email}</option>)}</select></label>
+      <label class="field"><span>Odhad hodnoty (Kč)</span><input class="input" name="value" inputmode="numeric" /></label>
+      <label class="field full"><span>Co klient chce</span><textarea class="textarea" name="needs" rows="4"></textarea></label>
+    </div>
+    <div class="actions"><button class="btn" type="submit">Založit lead</button><a class="btn btn--ghost" href="/admin/leady">Zrušit</a></div>
+  </form>
+</Admin>

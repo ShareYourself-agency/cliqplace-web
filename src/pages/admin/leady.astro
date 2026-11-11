@@ -1,0 +1,150 @@
+---
+import Admin from '../../layouts/Admin.astro';
+import { db, hasDb, STAGES, SEGMENTS, OPEN_STAGES, isStage, stageLabel, type Lead } from '../../lib/db';
+import { listUsers } from '../../lib/auth';
+import { ago, czk, due, fmtDateTime } from '../../lib/format';
+export const prerender = false;
+
+const me = Astro.locals.user!;
+const p = Astro.url.searchParams;
+const q = (p.get('q') || '').trim().slice(0, 100);
+const stage = p.get('stage') || '';
+const owner = p.get('owner') || '';
+const segment = p.get('segment') || '';
+const flag = p.get('flag') || '';
+const sort = p.get('sort') || 'new';
+const trash = p.get('kos') === '1';
+
+let leads: (Lead & { open_tasks: number })[] = [];
+let counts: Record<string, number> = {};
+let total = 0;
+let err = '';
+const users = hasDb() ? await listUsers().catch(() => []) : [];
+
+if (!hasDb()) err = 'Databáze není připojená.';
+else {
+  try {
+    const s = await db();
+    const like = `%${q}%`;
+    const ownerId = owner === 'me' ? me.id : Number(owner) || 0;
+    const order = {
+      new: s`l.created_at desc`,
+      activity: s`coalesce(l.last_activity_at, l.created_at) desc`,
+      value: s`l.value desc nulls last, l.created_at desc`,
+      next: s`l.next_step_at asc nulls last, l.created_at desc`,
+      company: s`lower(coalesce(nullif(l.company, ''), l.name)) asc`,
+    }[sort] ?? s`l.created_at desc`;
+    leads = await s<any[]>`
+      select l.*, u.name as owner_name, u.email as owner_email,
+        (select count(*)::int from tasks t where t.lead_id = l.id and t.done_at is null) as open_tasks
+      from leads l left join admin_users u on u.id = l.owner_id
+      where ${trash ? s`l.deleted_at is not null` : s`l.deleted_at is null`}
+        and (${q} = '' or l.company ilike ${like} or l.name ilike ${like} or l.email ilike ${like} or l.phone ilike ${like} or l.city ilike ${like} or l.message ilike ${like} or l.needs ilike ${like} or l.ico ilike ${like})
+        and (${!isStage(stage) && stage !== 'open'} or (${stage === 'open'} and l.status = any(${OPEN_STAGES})) or l.status = ${stage})
+        and (${owner === ''} or (${owner === 'none'} and l.owner_id is null) or l.owner_id = ${ownerId})
+        and (${segment === ''} or l.segment = ${segment})
+        and (${flag !== 'uncontacted'} or l.first_contact_at is null)
+        and (${flag !== 'nostep'} or (l.status = any(${OPEN_STAGES}) and not exists (select 1 from tasks t where t.lead_id = l.id and t.done_at is null)))
+        and (${flag !== 'late'} or l.next_step_at < now())
+      order by ${order}
+      limit 1000`;
+    const rows = await s<{ status: string; n: number }[]>`select status, count(*)::int as n from leads where deleted_at is null group by status`;
+    counts = Object.fromEntries(rows.map((r) => [r.status, r.n]));
+    total = rows.reduce((a, r) => a + r.n, 0);
+  } catch (e) {
+    console.error('[admin] leady', e);
+    err = 'Nepodařilo se načíst leady.';
+  }
+}
+const link = (patch: Record<string, string>) => {
+  const u = new URLSearchParams(p);
+  Object.entries(patch).forEach(([k, v]) => (v ? u.set(k, v) : u.delete(k)));
+  const s = u.toString();
+  return s ? `/admin/leady?${s}` : '/admin/leady';
+};
+const openCount = OPEN_STAGES.reduce((a, s) => a + (counts[s] || 0), 0);
+const sum = leads.reduce((a, l) => a + (l.value || 0), 0);
+---
+<Admin title={trash ? 'Koš' : 'Leady'} section="leady">
+  <div class="page-head">
+    <div>
+      <p class="eyebrow">{trash ? 'Smazané leady – lze obnovit' : `${leads.length} zobrazeno · ${czk(sum)}`}</p>
+      <h1 class="h1">{trash ? 'Koš' : 'Leady'}</h1>
+    </div>
+    {!trash && <a class="btn btn--ghost" href="/admin/export.csv" data-native>Export CSV</a>}
+  </div>
+
+  {err ? <div class="panel empty mono">{err}</div> : (
+    <>
+      {!trash && (
+        <nav class="chips" aria-label="Fáze">
+          <a href={link({ stage: '' })} class:list={['chip', { 'is-on': !stage }]}>Vše<b>{total}</b></a>
+          <a href={link({ stage: 'open' })} class:list={['chip', { 'is-on': stage === 'open' }]}>Otevřené<b>{openCount}</b></a>
+          {STAGES.map((st) => <a href={link({ stage: st.id })} class:list={['chip', { 'is-on': stage === st.id }]}>{st.label}<b>{counts[st.id] || 0}</b></a>)}
+        </nav>
+      )}
+
+      <form class="toolbar" method="get" action="/admin/leady">
+        {trash && <input type="hidden" name="kos" value="1" />}
+        {stage && <input type="hidden" name="stage" value={stage} />}
+        <input class="input search" type="search" name="q" value={q} placeholder="Hledat firmu, jméno, e-mail, telefon, město…" aria-label="Hledat" />
+        <select class="select" name="owner" data-autosubmit aria-label="Řeší">
+          <option value="">Řeší: všichni</option>
+          <option value="me" selected={owner === 'me'}>Moje</option>
+          <option value="none" selected={owner === 'none'}>Nepřiřazené</option>
+          {users.map((u) => <option value={u.id} selected={owner === String(u.id)}>{u.name || u.email}</option>)}
+        </select>
+        <select class="select" name="segment" data-autosubmit aria-label="Typ provozu">
+          <option value="">Typ: vše</option>
+          {SEGMENTS.map((sg) => <option selected={segment === sg}>{sg}</option>)}
+        </select>
+        <select class="select" name="flag" data-autosubmit aria-label="Filtr">
+          <option value="">Bez filtru</option>
+          <option value="uncontacted" selected={flag === 'uncontacted'}>Neoslovené</option>
+          <option value="nostep" selected={flag === 'nostep'}>Bez dalšího kroku</option>
+          <option value="late" selected={flag === 'late'}>Krok po termínu</option>
+        </select>
+        <select class="select" name="sort" data-autosubmit aria-label="Řazení">
+          <option value="new" selected={sort === 'new'}>Nejnovější</option>
+          <option value="activity" selected={sort === 'activity'}>Poslední aktivita</option>
+          <option value="next" selected={sort === 'next'}>Další krok</option>
+          <option value="value" selected={sort === 'value'}>Hodnota</option>
+          <option value="company" selected={sort === 'company'}>Název A–Z</option>
+        </select>
+        <button class="btn btn--ghost" type="submit">Hledat</button>
+      </form>
+
+      {leads.length === 0 ? (
+        <div class="panel empty">{q || stage || owner || segment || flag ? 'Nic neodpovídá filtru.' : trash ? 'Koš je prázdný.' : 'Zatím žádné leady. Poptávky z webu se tu objeví automaticky, nebo přidejte lead ručně.'}</div>
+      ) : (
+        <div class="panel table">
+          <table>
+            <thead>
+              <tr>
+                <th>Firma / kontakt</th><th>Fáze</th><th>Řeší</th><th>Hodnota</th><th>Další krok</th><th>Poslední krok</th><th>Přišlo</th>
+              </tr>
+            </thead>
+            <tbody>
+              {leads.map((l) => { const d = due(l.next_step_at); return (
+                <tr data-href={`/admin/lead/${l.id}`} class:list={[{ 'is-new': l.status === 'new' && !l.first_contact_at }]}>
+                  <td>
+                    <a class="who" href={`/admin/lead/${l.id}`}>
+                      <strong class="ell">{l.company || l.name}</strong>
+                      <span class="muted ell">{[l.company ? l.name : '', l.segment, l.city].filter(Boolean).join(' · ') || l.email}</span>
+                    </a>
+                  </td>
+                  <td><span class={`tag tag--${l.status}`}>{stageLabel(l.status)}</span>{!l.first_contact_at && l.status === 'new' ? <div class="mono faint" style="margin-top:4px">neosloveno</div> : null}</td>
+                  <td class="nowrap">{l.owner_name || (l as any).owner_email || <span class="faint">—</span>}</td>
+                  <td class="num nowrap">{l.value ? czk(l.value) : <span class="faint">—</span>}</td>
+                  <td style="max-width:240px">{l.next_step ? <div class="ell">{l.next_step}</div> : <span class="faint">—</span>}{l.next_step ? <span class={`pill ${d.tone ? `pill--${d.tone}` : ''}`}>{d.label}</span> : null}</td>
+                  <td style="max-width:260px"><div class="ell muted">{l.last_step || '—'}</div><span class="mono faint">{l.last_activity_at ? ago(l.last_activity_at) : ''}</span></td>
+                  <td class="mono nowrap" title={fmtDateTime(l.created_at)}>{ago(l.created_at)}</td>
+                </tr>
+              ); })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </>
+  )}
+</Admin>

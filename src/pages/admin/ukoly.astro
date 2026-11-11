@@ -1,0 +1,95 @@
+---
+import Admin from '../../layouts/Admin.astro';
+import { db, hasDb, type Task } from '../../lib/db';
+import { listUsers } from '../../lib/auth';
+import { due, fmtDateTime } from '../../lib/format';
+export const prerender = false;
+
+const me = Astro.locals.user!;
+const who = Astro.url.searchParams.get('kdo') || 'me';
+let tasks: (Task & { user_email?: string })[] = [];
+let done: (Task & { user_email?: string })[] = [];
+let err = '';
+const users = hasDb() ? await listUsers().catch(() => []) : [];
+if (!hasDb()) err = 'Databáze není připojená.';
+else {
+  try {
+    const s = await db();
+    const uid = who === 'me' ? me.id : Number(who) || 0;
+    tasks = await s<any[]>`
+      select t.*, l.company, l.name as lead_name, u.name as user_name, u.email as user_email
+      from tasks t join leads l on l.id = t.lead_id left join admin_users u on u.id = t.user_id
+      where t.done_at is null and l.deleted_at is null and (${who === 'all'} or t.user_id = ${uid})
+      order by t.due_at asc nulls last, t.created_at limit 500`;
+    done = await s<any[]>`
+      select t.*, l.company, l.name as lead_name, u.name as user_name, u.email as user_email
+      from tasks t join leads l on l.id = t.lead_id left join admin_users u on u.id = t.user_id
+      where t.done_at > now() - interval '7 days' and l.deleted_at is null and (${who === 'all'} or t.user_id = ${uid})
+      order by t.done_at desc limit 30`;
+  } catch (e) {
+    console.error('[admin] ukoly', e);
+    err = 'Nepodařilo se načíst úkoly.';
+  }
+}
+const groups: [string, typeof tasks][] = [
+  ['Po termínu', tasks.filter((t) => due(t.due_at).tone === 'red')],
+  ['Dnes', tasks.filter((t) => due(t.due_at).tone === 'amber')],
+  ['Zítra', tasks.filter((t) => due(t.due_at).tone === 'green')],
+  ['Později', tasks.filter((t) => t.due_at && due(t.due_at).tone === '')],
+  ['Bez termínu', tasks.filter((t) => !t.due_at)],
+];
+const redirect = Astro.url.pathname + Astro.url.search;
+---
+<Admin title="Úkoly" section="ukoly">
+  <div class="page-head">
+    <div><p class="eyebrow">{tasks.length} otevřených</p><h1 class="h1">Úkoly</h1></div>
+    <form class="toolbar" method="get" action="/admin/ukoly" style="margin:0">
+      <select class="select" name="kdo" data-autosubmit aria-label="Čí úkoly">
+        <option value="me" selected={who === 'me'}>Moje úkoly</option>
+        <option value="all" selected={who === 'all'}>Všechny úkoly</option>
+        {users.filter((u) => u.id !== me.id).map((u) => <option value={u.id} selected={who === String(u.id)}>{u.name || u.email}</option>)}
+      </select>
+    </form>
+  </div>
+  {err ? <div class="panel empty mono">{err}</div> : (
+    <div class="grid-2">
+      <div class="stack">
+        {tasks.length === 0 && <div class="panel empty">Žádné otevřené úkoly. Úkoly se zakládají v detailu leadu.</div>}
+        {groups.filter(([, list]) => list.length).map(([label, list]) => (
+          <section class="panel block">
+            <div class="block__head"><h2 class="h2">{label}</h2><span class="mono faint">{list.length}</span></div>
+            <div class="tasks">
+              {list.map((t) => { const d = due(t.due_at); return (
+                <div class="task">
+                  <form method="post" action={`/admin/lead/${t.lead_id}`}>
+                    <input type="hidden" name="action" value="task_toggle" /><input type="hidden" name="task_id" value={t.id} /><input type="hidden" name="redirect" value={redirect} />
+                    <button class="task__check" type="submit" aria-label="Hotovo"></button>
+                  </form>
+                  <a href={`/admin/lead/${t.lead_id}`} style="min-width:0"><span class="task__title">{t.title}</span><br /><span class="faint">{t.company || t.lead_name}{who !== 'me' ? ` · ${t.user_name || t.user_email || 'nepřiřazeno'}` : ''}</span></a>
+                  <span class={`pill ${d.tone ? `pill--${d.tone}` : ''}`}>{d.label}</span>
+                </div>
+              ); })}
+            </div>
+          </section>
+        ))}
+      </div>
+      <section class="panel block">
+        <h2 class="h2">Hotovo za 7 dní</h2>
+        {done.length === 0 ? <p class="faint">Zatím nic.</p> : (
+          <div class="tasks">
+            {done.map((t) => (
+              <div class="task is-done">
+                <form method="post" action={`/admin/lead/${t.lead_id}`}>
+                  <input type="hidden" name="action" value="task_toggle" /><input type="hidden" name="task_id" value={t.id} /><input type="hidden" name="redirect" value={redirect} />
+                  <button class="task__check" type="submit" aria-label="Vrátit"></button>
+                </form>
+                <a href={`/admin/lead/${t.lead_id}`} style="min-width:0"><span class="task__title">{t.title}</span><br /><span class="faint">{t.company || t.lead_name}</span></a>
+                <span class="mono faint">{fmtDateTime(t.done_at)}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+    </div>
+  )}
+</Admin>

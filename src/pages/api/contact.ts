@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { hasDb, insertLead } from '../../lib/db';
+import { hasBlob, parkInquiry } from '../../lib/backup';
 
 export const prerender = false;
 
@@ -103,20 +104,33 @@ export const POST: APIRoute = async ({ request, clientAddress, url }) => {
   const apiKey = process.env.RESEND_API_KEY;
   const to = process.env.CONTACT_TO || 'info@cliqplace.cz';
   const from = process.env.CONTACT_FROM || 'Web Cliqplace <onboarding@resend.dev>';
-  if (!apiKey && !hasDb()) {
+  if (!apiKey && !hasDb() && !hasBlob()) {
     console.error('[contact] neither DATABASE_URL nor RESEND_API_KEY is configured');
     return respond(503, { error: 'Formulář je dočasně nedostupný. Napište nám prosím na info@cliqplace.cz.' });
   }
 
-  // 1) store the lead (admin /admin)
+  // 1) store the lead in the CRM (/admin); if the DB is down, park it in Blob so it is imported later
   let leadId: number | null = null;
+  let parked = false;
+  const ref = request.headers.get('referer');
+  let page = '';
+  try { page = ref ? new URL(ref).pathname : ''; } catch {}
   if (hasDb()) {
     try {
-      const ref = request.headers.get('referer');
-      const source = ref ? oneLine(clean(new URL(ref).pathname + new URL(ref).search, 200)) : 'web';
-      leadId = await insertLead({ company: f.company, name: f.name, email: f.email, phone: f.phone, message: f.message, source });
+      leadId = await insertLead(
+        { company: f.company, name: f.name, email: f.email, phone: f.phone, message: f.message, source: 'Web – formulář' },
+        { consent: true, eventText: `Poptávka z webu${page ? ` (${page})` : ''}` },
+      );
     } catch (e) {
       console.error('[contact] db insert failed', e);
+    }
+  }
+  if (!leadId && hasBlob()) {
+    try {
+      await parkInquiry({ company: f.company, name: f.name, email: f.email, phone: f.phone, message: f.message, source: 'Web – formulář' });
+      parked = true;
+    } catch (e) {
+      console.error('[contact] park failed', e);
     }
   }
 
@@ -157,7 +171,7 @@ export const POST: APIRoute = async ({ request, clientAddress, url }) => {
     }
   }
 
-  if (!leadId && !mailed) {
+  if (!leadId && !parked && !mailed) {
     return respond(502, { error: 'Zprávu se nepodařilo odeslat. Napište nám prosím na info@cliqplace.cz.' });
   }
 

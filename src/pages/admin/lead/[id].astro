@@ -1,101 +1,148 @@
 ---
 import Admin from '../../../layouts/Admin.astro';
-import { db, hasDb, STATUSES, statusLabel, isStatus, type Lead, type LeadEvent } from '../../../lib/db';
-import { ago, czk, fmtDateTime } from '../../../lib/format';
+import { db, hasDb, STAGES, SEGMENTS, PRODUCTS, SOURCES, LOST_REASONS, ACTIVITY_KINDS, kindLabel, stageLabel, stageProb, type LeadEvent, type Task } from '../../../lib/db';
+import { getLead, handleLeadAction } from '../../../lib/crm';
+import { listUsers } from '../../../lib/auth';
+import { ago, czk, due, fmtDate, fmtDateTime, initials, toDateInput } from '../../../lib/format';
 export const prerender = false;
 
+const me = Astro.locals.user!;
 const id = Number(Astro.params.id);
-if (!Number.isInteger(id) || id <= 0 || !hasDb()) return Astro.redirect('/admin', 303);
-const s = await db();
+if (!Number.isInteger(id) || id <= 0 || !hasDb()) return Astro.redirect('/admin/leady', 303);
 
 if (Astro.request.method === 'POST') {
   const fd = await Astro.request.formData();
-  const action = String(fd.get('action') || '');
-  const [cur] = await s<Lead[]>`select * from leads where id = ${id}`;
-  if (!cur) return Astro.redirect('/admin', 303);
-
-  if (action === 'status') {
-    const next = String(fd.get('status') || '');
-    if (isStatus(next) && next !== cur.status) {
-      await s`update leads set status = ${next}, updated_at = now() where id = ${id}`;
-      await s`insert into lead_events (lead_id, kind, text) values (${id}, 'status', ${`${statusLabel(cur.status)} → ${statusLabel(next)}`})`;
-    }
-  } else if (action === 'note') {
-    const text = String(fd.get('text') || '').trim().slice(0, 4000);
-    if (text) {
-      await s`insert into lead_events (lead_id, kind, text) values (${id}, 'note', ${text})`;
-      await s`update leads set updated_at = now() where id = ${id}`;
-    }
-  } else if (action === 'meta') {
-    const owner = String(fd.get('owner') || '').trim().slice(0, 80);
-    const rawVal = String(fd.get('value') || '').replace(/[^\d]/g, '').slice(0, 10);
-    const value = rawVal ? Number(rawVal) : null;
-    await s`update leads set owner = ${owner}, value = ${value}, updated_at = now() where id = ${id}`;
-    const changes: string[] = [];
-    if (owner !== cur.owner) changes.push(`řeší: ${owner || '—'}`);
-    if (value !== cur.value) changes.push(`hodnota: ${czk(value)}`);
-    if (changes.length) await s`insert into lead_events (lead_id, kind, text) values (${id}, 'meta', ${changes.join(', ')})`;
-  } else if (action === 'delete' && fd.get('confirm') === 'smazat') {
-    await s`delete from leads where id = ${id}`;
-    return Astro.redirect('/admin', 303);
-  }
-  return Astro.redirect(`/admin/lead/${id}`, 303);
+  const to = await handleLeadAction(id, fd, me.id, me.name || me.email);
+  return Astro.redirect(to, 303);
 }
 
-const [lead] = await s<Lead[]>`select * from leads where id = ${id}`;
-if (!lead) return Astro.redirect('/admin', 303);
-const events = await s<LeadEvent[]>`select * from lead_events where lead_id = ${id} order by at desc limit 200`;
-const [nav] = await s<{ prev: number | null; next: number | null }[]>`
-  select
-    (select id from leads where created_at > ${lead.created_at} order by created_at asc limit 1) as prev,
-    (select id from leads where created_at < ${lead.created_at} order by created_at desc limit 1) as next`;
+const s = await db();
+const lead = await getLead(id);
+if (!lead) return Astro.redirect('/admin/leady', 303);
+const [events, tasks, users, nav] = await Promise.all([
+  s<LeadEvent[]>`select e.*, u.name as user_name, u.email as user_email from lead_events e left join admin_users u on u.id = e.user_id where e.lead_id = ${id} order by e.at desc, e.id desc limit 300`,
+  s<Task[]>`select t.*, u.name as user_name, u.email as user_email from tasks t left join admin_users u on u.id = t.user_id where t.lead_id = ${id} order by (t.done_at is not null), t.due_at asc nulls last, t.created_at`,
+  listUsers(),
+  s<{ prev: number | null; next: number | null }[]>`
+    select
+      (select id from leads where deleted_at is null and created_at > ${lead.created_at} order by created_at asc limit 1) as prev,
+      (select id from leads where deleted_at is null and created_at < ${lead.created_at} order by created_at desc limit 1) as next`,
+]);
+const openTasks = tasks.filter((t) => !t.done_at);
+const doneTasks = tasks.filter((t) => t.done_at);
+const nextTask = openTasks[0];
+const nd = due(nextTask?.due_at);
+const stageIdx = STAGES.findIndex((st) => st.id === lead.status);
+const prob = lead.probability ?? stageProb(lead.status);
 const telHref = lead.phone ? `tel:${lead.phone.replace(/[^\d+]/g, '')}` : '';
-const subject = encodeURIComponent('Cliqplace – vaše poptávka');
+const web = lead.website ? (lead.website.startsWith('http') ? lead.website : `https://${lead.website}`) : '';
+const who = (u: { user_name?: string | null; user_email?: string | null }) => u.user_name || (u as any).user_email || '';
+const lostSel = lead.status === 'lost';
 ---
-<Admin title={lead.company || lead.name}>
-  <div class="crumbs mono">
-    <a href="/admin">← Leady</a>
+<Admin title={lead.company || lead.name} section="leady">
+  <div class="crumbs">
+    <a href="/admin/leady">← Leady</a>
     <span class="faint">#{String(lead.id).padStart(4, '0')}</span>
+    {lead.deleted_at && <span class="pill pill--red">v koši</span>}
     <span class="pager">
-      {nav.prev ? <a href={`/admin/lead/${nav.prev}`}>novější</a> : <span class="faint">novější</span>}
-      <span class="faint">/</span>
-      {nav.next ? <a href={`/admin/lead/${nav.next}`}>starší</a> : <span class="faint">starší</span>}
+      {nav[0].prev ? <a href={`/admin/lead/${nav[0].prev}`}>← novější</a> : <span class="faint">← novější</span>}
+      {nav[0].next ? <a href={`/admin/lead/${nav[0].next}`}>starší →</a> : <span class="faint">starší →</span>}
     </span>
   </div>
 
-  <section class="hero">
-    <div>
-      <p class="eyebrow">{fmtDateTime(lead.created_at)} · {ago(lead.created_at)}</p>
-      <h1 class="h1">{lead.company || lead.name}</h1>
-      {lead.company && <p class="muted big">{lead.name}</p>}
-    </div>
-    <span class={`tag tag--${lead.status}`}>{statusLabel(lead.status)}</span>
-  </section>
+  {lead.deleted_at && (
+    <form method="post" class="flash flash--err actions" style="justify-content:space-between">
+      <span>Lead je v koši (smazán {fmtDateTime(lead.deleted_at as unknown as Date)}).</span>
+      <input type="hidden" name="action" value="restore" />
+      <button class="btn btn--sm" type="submit">Obnovit</button>
+    </form>
+  )}
 
-  <div class="grid">
+  <header class="lead-head">
+    <div style="min-width:0">
+      <h1 class="h1">{lead.company || lead.name}</h1>
+      <div class="lead-head__meta">
+        {lead.company && <span>{lead.name}{lead.position ? `, ${lead.position}` : ''}</span>}
+        {lead.segment && <span class="pill">{lead.segment}</span>}
+        {lead.city && <span class="pill">{lead.city}</span>}
+        <span class="pill">{lead.source || 'Web – formulář'}</span>
+        <span class="mono faint">přišlo {fmtDateTime(lead.created_at)} ({ago(lead.created_at)})</span>
+      </div>
+    </div>
+    <form method="post" class="actions">
+      <input type="hidden" name="action" value="assign" />
+      <label class="field" style="min-width:220px">
+        <span>Řeší</span>
+        <select class="select" name="owner_id" data-autosubmit>
+          <option value="">— nepřiřazeno —</option>
+          {users.map((u) => <option value={u.id} selected={u.id === lead.owner_id}>{u.name || u.email}</option>)}
+        </select>
+      </label>
+      <noscript><button class="btn btn--ghost btn--sm" type="submit">Uložit</button></noscript>
+    </form>
+  </header>
+
+  <form method="post" class="stepper" aria-label="Fáze obchodu">
+    <input type="hidden" name="action" value="stage" />
+    {STAGES.map((st, i) => (
+      <button type="submit" name="status" value={st.id}
+        class:list={[st.id === 'won' ? 'won' : st.id === 'lost' ? 'lost' : '', { 'is-on': st.id === lead.status, 'is-done': i < stageIdx && lead.status !== 'lost' && st.id !== 'won' && st.id !== 'lost' }]}
+        aria-pressed={st.id === lead.status ? 'true' : 'false'}>{st.label}</button>
+    ))}
+  </form>
+
+  <div class="grid-2">
     <div class="stack">
-      <section class="panel block">
-        <p class="eyebrow">Zpráva</p>
-        <p class="message">{lead.message}</p>
+      <section class:list={['next', { 'next--late': nd.tone === 'red' }]}>
+        <span class="eyebrow">Další krok</span>
+        {nextTask ? (
+          <div class="actions" style="justify-content:space-between">
+            <strong>{nextTask.title}</strong>
+            <span class="actions"><span class={`pill ${nd.tone ? `pill--${nd.tone}` : ''}`}>{nd.label}</span>{who(nextTask) && <span class="mono faint">{who(nextTask)}</span>}</span>
+          </div>
+        ) : (
+          <span class="muted">Žádný naplánovaný krok. {lead.status !== 'won' && lead.status !== 'lost' ? 'Naplánujte ho níže, ať obchod nevychladne.' : ''}</span>
+        )}
+        <span class="mono faint">
+          Osloven: {lead.first_contact_at ? `ano · ${fmtDate(lead.first_contact_at)}` : 'zatím ne'}
+          {' · '}Poslední krok: {lead.last_step ? `${lead.last_step} (${ago(lead.last_activity_at)})` : '—'}
+        </span>
+        {!lead.first_contact_at && (
+          <form method="post"><input type="hidden" name="action" value="contacted" /><button class="btn btn--ghost btn--sm" type="submit">Označit jako osloveno</button></form>
+        )}
       </section>
 
-      <section class="panel block">
-        <p class="eyebrow">Přidat poznámku</p>
-        <form method="post" class="note">
-          <input type="hidden" name="action" value="note" />
-          <textarea class="input" name="text" rows="3" placeholder="Volal jsem, domluvené demo na čtvrtek…" required></textarea>
-          <button class="btn" type="submit">Uložit poznámku</button>
+      <section class="panel block" id="aktivita">
+        <h2 class="h2">Zaznamenat aktivitu</h2>
+        <form method="post" class="composer">
+          <input type="hidden" name="action" value="activity" />
+          <div class="kinds" role="radiogroup" aria-label="Typ aktivity">
+            {ACTIVITY_KINDS.map((k, i) => (
+              <label class="check"><input type="radio" name="kind" value={k.id} checked={i === 1} /><span>{k.label}</span></label>
+            ))}
+          </div>
+          <textarea class="textarea" name="text" rows="3" placeholder="Co se stalo? Např. volal jsem, mají zájem o demo s pokladnou, rozhoduje ředitel…"></textarea>
+          <div class="form-grid">
+            <label class="field"><span>Naplánovat další krok</span><input class="input" name="next_title" placeholder="Např. poslat nabídku, zavolat po demu" /></label>
+            <label class="field"><span>Kdy</span><input class="input" type="datetime-local" name="next_at" /></label>
+          </div>
+          <div class="actions"><button class="btn" type="submit">Uložit</button><span class="mono faint">Telefonát / e-mail / schůzka automaticky označí lead jako oslovený.</span></div>
         </form>
       </section>
 
       <section class="panel block">
-        <p class="eyebrow">Historie</p>
+        <div class="block__head"><h2 class="h2">Historie</h2><span class="mono faint">{events.length} záznamů</span></div>
         <ol class="timeline">
           {events.map((e) => (
-            <li class:list={['ev', `ev--${e.kind}`]}>
-              <span class="ev__at mono faint" title={fmtDateTime(e.at)}>{fmtDateTime(e.at)}</span>
-              <span class="ev__kind mono">{e.kind === 'note' ? 'poznámka' : e.kind === 'status' ? 'stav' : e.kind === 'created' ? 'vytvořeno' : 'úprava'}</span>
-              <p class="ev__text">{e.text}</p>
+            <li class={`ev ev--${e.kind}`}>
+              <span class="ev__dot" title={who(e) || 'web'}>{who(e) ? initials(who(e)) : 'W'}</span>
+              <div style="min-width:0">
+                <div class="ev__head">
+                  <strong>{kindLabel(e.kind)}</strong>
+                  <span class="mono faint">{fmtDateTime(e.at)}{who(e) ? ` · ${who(e)}` : ''}</span>
+                </div>
+                <p class="ev__text">{e.text}</p>
+              </div>
             </li>
           ))}
         </ol>
@@ -104,94 +151,108 @@ const subject = encodeURIComponent('Cliqplace – vaše poptávka');
 
     <aside class="stack">
       <section class="panel block">
-        <p class="eyebrow">Kontakt</p>
+        <div class="block__head"><h2 class="h2">Úkoly</h2><span class="mono faint">{openTasks.length} otevřených</span></div>
+        <div class="tasks">
+          {[...openTasks, ...doneTasks.slice(0, 5)].map((t) => { const d = due(t.due_at); return (
+            <div class:list={['task', { 'is-done': t.done_at }]}>
+              <form method="post"><input type="hidden" name="action" value="task_toggle" /><input type="hidden" name="task_id" value={t.id} /><button class="task__check" type="submit" aria-label={t.done_at ? 'Vrátit' : 'Hotovo'}></button></form>
+              <span class="task__title" style="min-width:0">{t.title}<br /><span class="mono faint">{who(t)}</span></span>
+              <span class="task__meta">
+                {!t.done_at && <span class={`pill ${d.tone ? `pill--${d.tone}` : ''}`}>{d.label}</span>}
+                <form method="post" data-confirm="Smazat úkol?"><input type="hidden" name="action" value="task_delete" /><input type="hidden" name="task_id" value={t.id} /><button class="btn btn--ghost btn--sm" type="submit" aria-label="Smazat úkol">×</button></form>
+              </span>
+            </div>
+          ); })}
+        </div>
+        <form method="post" class="form-grid">
+          <input type="hidden" name="action" value="task_add" />
+          <label class="field full"><span>Nový úkol</span><input class="input" name="title" required placeholder="Např. zavolat kvůli demu" /></label>
+          <label class="field"><span>Termín</span><input class="input" type="datetime-local" name="due_at" /></label>
+          <label class="field"><span>Pro koho</span>
+            <select class="select" name="user_id">{users.map((u) => <option value={u.id} selected={u.id === (lead.owner_id ?? me.id)}>{u.name || u.email}</option>)}</select>
+          </label>
+          <div class="full"><button class="btn btn--ghost btn--sm" type="submit">Přidat úkol</button></div>
+        </form>
+      </section>
+
+      <section class="panel block">
+        <h2 class="h2">Kontakt</h2>
         <dl class="kv">
-          <dt>E-mail</dt><dd><a class="link" href={`mailto:${lead.email}?subject=${subject}`}>{lead.email}</a></dd>
-          <dt>Telefon</dt><dd>{telHref ? <a class="link" href={telHref}>{lead.phone}</a> : <span class="faint">—</span>}</dd>
-          <dt>Firma</dt><dd>{lead.company || <span class="faint">—</span>}</dd>
-          <dt>Zdroj</dt><dd class="mono">{lead.source || 'web'}</dd>
-          <dt>Souhlas</dt><dd class="mono">{lead.consent_at ? fmtDateTime(lead.consent_at) : '—'}</dd>
+          <dt>E-mail</dt><dd>{lead.email ? <a class="link" href={`mailto:${lead.email}`} data-native>{lead.email}</a> : <span class="faint">—</span>}</dd>
+          <dt>Telefon</dt><dd>{telHref ? <a class="link" href={telHref} data-native>{lead.phone}</a> : <span class="faint">—</span>}</dd>
+          <dt>Web</dt><dd>{web ? <a class="link" href={web} target="_blank" rel="noopener noreferrer">{lead.website}</a> : <span class="faint">—</span>}</dd>
+          <dt>IČO</dt><dd>{lead.ico ? <a class="link" href={`https://ares.gov.cz/ekonomicke-subjekty?ico=${encodeURIComponent(lead.ico)}`} target="_blank" rel="noopener noreferrer">{lead.ico}</a> : <span class="faint">—</span>}</dd>
+          <dt>Souhlas</dt><dd class="mono">{lead.consent_at ? `GDPR · ${fmtDateTime(lead.consent_at)}` : '—'}</dd>
         </dl>
       </section>
 
       <section class="panel block">
-        <p class="eyebrow">Stav</p>
-        <form method="post" class="statuses">
-          <input type="hidden" name="action" value="status" />
-          {STATUSES.map((st) => (
-            <button type="submit" name="status" value={st.id} class:list={['st', { 'is-on': st.id === lead.status }]} aria-pressed={st.id === lead.status ? 'true' : 'false'}>
-              {st.label}
-            </button>
-          ))}
+        <h2 class="h2">Obchod</h2>
+        <form method="post" class="form-grid">
+          <input type="hidden" name="action" value="update" />
+          <input type="hidden" name="products__present" value="1" />
+          <label class="field"><span>Hodnota (Kč)</span><input class="input num" name="value" inputmode="numeric" value={lead.value ?? ''} placeholder="0" /></label>
+          <label class="field"><span>Pravděpodobnost %</span><input class="input num" name="probability" inputmode="numeric" value={lead.probability ?? ''} placeholder={String(stageProb(lead.status))} /></label>
+          <label class="field"><span>Očekávané uzavření</span><input class="input" type="date" name="expected_close" value={toDateInput(lead.expected_close)} /></label>
+          <label class="field"><span>Zdroj</span>
+            <select class="select" name="source">{[lead.source && !SOURCES.includes(lead.source) ? lead.source : null, ...SOURCES].filter(Boolean).map((x) => <option selected={x === (lead.source || 'Web – formulář')}>{x}</option>)}</select>
+          </label>
+          <div class="field full"><span>Zájem o</span>
+            <div class="checks">{PRODUCTS.map((p) => <label class="check"><input type="checkbox" name="products" value={p} checked={lead.products?.includes(p)} /><span>{p}</span></label>)}</div>
+          </div>
+          {lostSel && (
+            <label class="field full"><span>Důvod prohry</span>
+              <select class="select" name="lost_reason"><option value="">—</option>{LOST_REASONS.map((r) => <option selected={r === lead.lost_reason}>{r}</option>)}</select>
+            </label>
+          )}
+          <label class="field full"><span>Štítky (oddělené čárkou)</span><input class="input" name="tags" value={(lead.tags || []).join(', ')} placeholder="např. VIP, sezóna 2027" /></label>
+          <div class="full actions" style="justify-content:space-between"><button class="btn btn--ghost btn--sm" type="submit">Uložit</button><span class="mono faint">vážená hodnota {czk(lead.value ? Math.round((lead.value * prob) / 100) : null)}</span></div>
         </form>
       </section>
 
       <section class="panel block">
-        <p class="eyebrow">Obchod</p>
-        <form method="post" class="meta">
-          <input type="hidden" name="action" value="meta" />
-          <label><span class="mono muted">Řeší</span><input class="input" name="owner" value={lead.owner} placeholder="Jméno obchodníka" maxlength="80" /></label>
-          <label><span class="mono muted">Odhad hodnoty (Kč)</span><input class="input" name="value" value={lead.value ?? ''} inputmode="numeric" placeholder="0" /></label>
-          <button class="ghost" type="submit">Uložit</button>
+        <h2 class="h2">Co klient chce</h2>
+        <form method="post" class="form-grid">
+          <input type="hidden" name="action" value="update" />
+          <label class="field full"><span>Potřeby a požadavky</span><textarea class="textarea" name="needs" rows="4" placeholder="Co řeší, co je pro ně důležité, kdo rozhoduje, termíny…">{lead.needs}</textarea></label>
+          <label class="field"><span>Stávající řešení</span><input class="input" name="current_solution" value={lead.current_solution} placeholder="např. GoOut, Colosseum…" /></label>
+          <label class="field"><span>Velikost / kapacita</span><input class="input" name="capacity" value={lead.capacity} placeholder="např. 2 sály, 400 míst" /></label>
+          <div class="full"><button class="btn btn--ghost btn--sm" type="submit">Uložit</button></div>
         </form>
       </section>
 
-      <details class="panel block danger">
-        <summary class="mono">Smazat lead</summary>
-        <form method="post" class="meta">
-          <input type="hidden" name="action" value="delete" />
-          <label><span class="mono muted">Pro potvrzení napište „smazat“</span><input class="input" name="confirm" autocomplete="off" required pattern="smazat" /></label>
-          <button class="ghost ghost--danger" type="submit">Smazat natrvalo</button>
+      {lead.message && (
+        <section class="panel block">
+          <h2 class="h2">Původní poptávka</h2>
+          <p style="white-space:pre-wrap">{lead.message}</p>
+        </section>
+      )}
+
+      <details class="panel block">
+        <summary class="h2" style="cursor:pointer">Upravit firmu a kontakt</summary>
+        <form method="post" class="form-grid">
+          <input type="hidden" name="action" value="update" />
+          <label class="field full"><span>Firma / instituce</span><input class="input" name="company" value={lead.company} /></label>
+          <label class="field"><span>Kontaktní osoba</span><input class="input" name="name" value={lead.name} /></label>
+          <label class="field"><span>Pozice</span><input class="input" name="position" value={lead.position} /></label>
+          <label class="field"><span>E-mail</span><input class="input" type="email" name="email" value={lead.email} /></label>
+          <label class="field"><span>Telefon</span><input class="input" name="phone" value={lead.phone} /></label>
+          <label class="field"><span>Typ provozu</span>
+            <select class="select" name="segment"><option value="">—</option>{SEGMENTS.map((x) => <option selected={x === lead.segment}>{x}</option>)}</select>
+          </label>
+          <label class="field"><span>Město</span><input class="input" name="city" value={lead.city} /></label>
+          <label class="field"><span>Web</span><input class="input" name="website" value={lead.website} /></label>
+          <label class="field"><span>IČO</span><input class="input" name="ico" value={lead.ico} inputmode="numeric" /></label>
+          <div class="full"><button class="btn btn--ghost btn--sm" type="submit">Uložit kontakt</button></div>
         </form>
       </details>
+
+      {!lead.deleted_at && (
+        <form method="post" data-confirm="Přesunout lead do koše? Půjde obnovit." class="actions">
+          <input type="hidden" name="action" value="delete" />
+          <button class="btn btn--danger btn--sm" type="submit">Přesunout do koše</button>
+        </form>
+      )}
     </aside>
   </div>
 </Admin>
-
-<style>
-  .crumbs { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; color: var(--tx-2); }
-  .crumbs a:hover { color: var(--lime); }
-  .pager { margin-left: auto; display: flex; gap: 8px; }
-  .hero { display: flex; align-items: start; justify-content: space-between; gap: 20px; margin-bottom: 24px; }
-  .hero .eyebrow { margin-bottom: 8px; }
-  .big { font-size: 17px; margin-top: 4px; }
-
-  .grid { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 16px; align-items: start; }
-  @media (max-width: 960px) { .grid { grid-template-columns: 1fr; } }
-  .stack { display: grid; gap: 16px; }
-  .block { padding: 20px; display: grid; gap: 14px; }
-  .message { white-space: pre-wrap; font-size: 15px; line-height: 1.65; }
-
-  .note { display: grid; gap: 10px; justify-items: start; }
-  .note textarea { resize: vertical; min-height: 84px; }
-
-  .timeline { list-style: none; padding: 0; display: grid; }
-  .ev { display: grid; grid-template-columns: 150px 90px 1fr; gap: 4px 14px; padding: 12px 0; border-top: 1px solid var(--line); }
-  .ev:first-child { border-top: 0; padding-top: 0; }
-  .ev__kind { color: var(--tx-2); text-transform: uppercase; letter-spacing: .08em; font-size: 11px; }
-  .ev--note .ev__kind { color: var(--lime); }
-  .ev--status .ev__kind { color: #8fd3ff; }
-  .ev__text { white-space: pre-wrap; }
-  @media (max-width: 640px) { .ev { grid-template-columns: 1fr auto; } .ev__text { grid-column: 1 / -1; } }
-
-  .kv { display: grid; grid-template-columns: 80px 1fr; gap: 10px 14px; }
-  .kv dt { font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--tx-3); padding-top: 2px; }
-  .kv dd { margin: 0; overflow-wrap: anywhere; }
-  .link { color: var(--lime); border-bottom: 1px solid rgba(199, 255, 156, .3); }
-  .link:hover { border-color: var(--lime); }
-
-  .statuses { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-  .st {
-    font-family: var(--mono); font-size: 12px; text-align: left; padding: 9px 11px; border-radius: 7px; cursor: pointer;
-    background: var(--bg); border: 1px solid var(--line-2); color: var(--tx-2); transition: border-color .2s, color .2s;
-  }
-  .st:hover { color: var(--tx); border-color: var(--tx-3); }
-  .st.is-on { color: #07110a; background: var(--lime); border-color: var(--lime); font-weight: 600; }
-
-  .meta { display: grid; gap: 12px; justify-items: start; }
-  .meta label { display: grid; gap: 6px; width: 100%; }
-  .danger summary { cursor: pointer; color: var(--tx-3); list-style: none; }
-  .danger summary::-webkit-details-marker { display: none; }
-  .danger[open] summary { color: #ff9b9b; }
-  .ghost--danger { color: #ff9b9b; border-color: rgba(255, 155, 155, .35); }
-</style>

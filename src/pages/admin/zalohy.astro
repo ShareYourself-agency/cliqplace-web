@@ -1,0 +1,86 @@
+---
+import Admin from '../../layouts/Admin.astro';
+import { hasBlob, listBackups, makeBackup, restoreMissing, type BackupInfo } from '../../lib/backup';
+import { ago, fmtDateTime } from '../../lib/format';
+export const prerender = false;
+
+const me = Astro.locals.user!;
+let msg = '';
+let err = '';
+let backups: BackupInfo[] = [];
+
+if (hasBlob()) {
+  if (Astro.request.method === 'POST') {
+    const fd = await Astro.request.formData();
+    const action = String(fd.get('action') || '');
+    try {
+      if (action === 'now') {
+        const r = await makeBackup(`ručně (${me.email})`);
+        msg = `Záloha vytvořena: ${r.counts.leads} leadů, ${r.counts.lead_events} záznamů historie, ${r.counts.tasks} úkolů.`;
+      } else if (action === 'restore') {
+        const r = await restoreMissing(String(fd.get('path') || ''));
+        const total = Object.values(r).reduce((a, b) => a + b, 0);
+        msg = total ? `Obnoveno ${total} chybějících záznamů (leady ${r.leads}, historie ${r.lead_events}, úkoly ${r.tasks}, uživatelé ${r.admin_users}).` : 'Nic nechybělo – všechna data ze zálohy v databázi už jsou.';
+      }
+    } catch (e) {
+      console.error('[zalohy]', e);
+      err = 'Akce se nepovedla. Zkuste to znovu.';
+    }
+  }
+  try {
+    backups = await listBackups();
+  } catch (e) {
+    console.error('[zalohy] list', e);
+    err ||= 'Nepodařilo se načíst seznam záloh.';
+  }
+}
+const kb = (n: number) => `${(n / 1024).toFixed(n > 102400 ? 0 : 1)} kB`;
+---
+<Admin title="Zálohy">
+  <div class="page-head">
+    <div><p class="eyebrow">Automaticky každých 6 hodin · uchováváme posledních 120 záloh (≈ 30 dní)</p><h1 class="h1">Zálohy</h1></div>
+    {hasBlob() && (
+      <form method="post"><input type="hidden" name="action" value="now" /><button class="btn" type="submit">Zálohovat teď</button></form>
+    )}
+  </div>
+  {msg && <p class="flash">{msg}</p>}
+  {err && <p class="flash flash--err">{err}</p>}
+
+  {!hasBlob() ? (
+    <div class="panel block"><p>Úložiště záloh není připojené. Ve Vercelu: Storage → Create → Blob (Private) → připojit k projektu cliqplace-web.</p></div>
+  ) : (
+    <div class="grid-2">
+      <section class="panel table">
+        <table style="min-width:520px">
+          <thead><tr><th>Záloha</th><th>Velikost</th><th></th></tr></thead>
+          <tbody>
+            {backups.length === 0 && <tr><td colspan="3" class="faint">Zatím žádná záloha. První vznikne automaticky do 6 hodin, nebo klikněte na „Zálohovat teď“.</td></tr>}
+            {backups.map((b, i) => (
+              <tr style="cursor:default">
+                <td><strong>{fmtDateTime(b.uploadedAt)}</strong> <span class="mono faint">{ago(b.uploadedAt)}</span>{i === 0 && <span class="pill pill--green" style="margin-left:6px">nejnovější</span>}</td>
+                <td class="mono">{kb(b.size)}</td>
+                <td class="actions" style="justify-content:end">
+                  <a class="btn btn--ghost btn--sm" href={`/admin/zalohy/stahnout?path=${encodeURIComponent(b.pathname)}`} data-native>Stáhnout</a>
+                  <form method="post" data-confirm="Doplnit do databáze záznamy, které v ní chybí? Nic se nesmaže ani nepřepíše.">
+                    <input type="hidden" name="action" value="restore" /><input type="hidden" name="path" value={b.pathname} />
+                    <button class="btn btn--ghost btn--sm" type="submit">Obnovit chybějící</button>
+                  </form>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </section>
+      <section class="panel block">
+        <h2 class="h2">Jak jsou data chráněná</h2>
+        <ul class="muted" style="padding-left:18px;display:grid;gap:8px">
+          <li>Databáze (Neon, EU – Frankfurt) má vlastní historii změn.</li>
+          <li>Každých 6 hodin se celý obsah CRM uloží jako komprimovaná záloha do odděleného soukromého úložiště.</li>
+          <li>Smazaný lead jde nejdřív do koše a dá se obnovit.</li>
+          <li>Když by databáze nebyla dostupná, poptávka z webu se neztratí – uloží se do záložní schránky a do CRM se doplní automaticky, jakmile databáze znovu běží. Zároveň odejde e-mailem.</li>
+          <li>„Obnovit chybějící“ jen doplní záznamy, které v databázi nejsou. Nic nepřepíše ani nesmaže.</li>
+        </ul>
+      </section>
+    </div>
+  )}
+</Admin>
