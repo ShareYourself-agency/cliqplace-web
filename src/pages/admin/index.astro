@@ -1,0 +1,213 @@
+---
+import Admin from '../../layouts/Admin.astro';
+import { db, hasDb, STATUSES, statusLabel, isStatus, type Lead } from '../../lib/db';
+import { ago, czk, fmtDateTime } from '../../lib/format';
+export const prerender = false;
+
+const q = (Astro.url.searchParams.get('q') || '').trim().slice(0, 100);
+const st = Astro.url.searchParams.get('status') || '';
+const view = Astro.url.searchParams.get('view') === 'pipeline' ? 'pipeline' : 'list';
+
+let leads: Lead[] = [];
+let counts: Record<string, number> = {};
+let stats = { total: 0, last30: 0, prev30: 0, openValue: 0, won: 0, lost: 0 };
+let dbError = '';
+
+if (!hasDb()) dbError = 'Databáze není připojená (chybí DATABASE_URL).';
+else {
+  try {
+    const s = await db();
+    const like = `%${q}%`;
+    leads = await s<Lead[]>`
+      select * from leads
+      where (${q} = '' or company ilike ${like} or name ilike ${like} or email ilike ${like} or phone ilike ${like} or message ilike ${like})
+        and (${view === 'pipeline' || !isStatus(st)} or status = ${st})
+      order by created_at desc
+      limit 500`;
+    const rows = await s<{ status: string; n: number }[]>`select status, count(*)::int as n from leads group by status`;
+    counts = Object.fromEntries(rows.map((r) => [r.status, r.n]));
+    const [a] = await s<{ total: number; last30: number; prev30: number; open_value: number }[]>`
+      select count(*)::int as total,
+        count(*) filter (where created_at > now() - interval '30 days')::int as last30,
+        count(*) filter (where created_at <= now() - interval '30 days' and created_at > now() - interval '60 days')::int as prev30,
+        coalesce(sum(value) filter (where status not in ('won','lost')), 0)::int as open_value
+      from leads`;
+    stats = { total: a.total, last30: a.last30, prev30: a.prev30, openValue: a.open_value, won: counts.won || 0, lost: counts.lost || 0 };
+  } catch (e) {
+    console.error('[admin] db error', e);
+    dbError = 'Nepodařilo se načíst data z databáze.';
+  }
+}
+
+const closed = stats.won + stats.lost;
+const winRate = closed ? Math.round((stats.won / closed) * 100) : null;
+const trend = stats.prev30 ? Math.round(((stats.last30 - stats.prev30) / stats.prev30) * 100) : null;
+const qs = (p: Record<string, string>) => {
+  const u = new URLSearchParams();
+  if (q) u.set('q', q);
+  Object.entries(p).forEach(([k, v]) => v && u.set(k, v));
+  const s = u.toString();
+  return s ? `/admin?${s}` : '/admin';
+};
+const preview = (m: string) => (m.length > 120 ? m.slice(0, 118).trimEnd() + '…' : m);
+---
+<Admin title={view === 'pipeline' ? 'Pipeline' : 'Leady'}>
+  <section class="head">
+    <div>
+      <p class="eyebrow">Poptávky z cliqplace.cz</p>
+      <h1 class="h1">{view === 'pipeline' ? 'Pipeline' : 'Leady'}</h1>
+    </div>
+    <form class="search" method="get" action="/admin" role="search">
+      {view === 'pipeline' && <input type="hidden" name="view" value="pipeline" />}
+      {view === 'list' && isStatus(st) && <input type="hidden" name="status" value={st} />}
+      <input class="input" type="search" name="q" value={q} placeholder="Hledat firmu, jméno, e-mail…" aria-label="Hledat" />
+    </form>
+  </section>
+
+  {dbError ? (
+    <div class="panel empty"><p class="mono">{dbError}</p></div>
+  ) : (
+    <>
+      <section class="kpis">
+        <div class="kpi panel">
+          <span class="eyebrow">Nové k vyřízení</span>
+          <strong class:list={['kpi__n', { 'is-hot': (counts.new || 0) > 0 }]}>{counts.new || 0}</strong>
+        </div>
+        <div class="kpi panel">
+          <span class="eyebrow">Posledních 30 dní</span>
+          <strong class="kpi__n">{stats.last30}</strong>
+          {trend !== null && <span class:list={['mono', trend >= 0 ? 'up' : 'down']}>{trend >= 0 ? '+' : ''}{trend} % vs. předchozích 30</span>}
+        </div>
+        <div class="kpi panel">
+          <span class="eyebrow">Úspěšnost</span>
+          <strong class="kpi__n">{winRate === null ? '—' : `${winRate} %`}</strong>
+          <span class="mono faint">{stats.won} vyhráno / {closed} uzavřeno</span>
+        </div>
+        <div class="kpi panel">
+          <span class="eyebrow">Otevřená hodnota</span>
+          <strong class="kpi__n kpi__n--sm">{czk(stats.openValue)}</strong>
+          <span class="mono faint">{stats.total} leadů celkem</span>
+        </div>
+      </section>
+
+      {view === 'list' ? (
+        <>
+          <nav class="filters" aria-label="Filtr stavu">
+            <a href={qs({})} class:list={['chip', { 'is-on': !isStatus(st) }]}>Vše <span>{stats.total}</span></a>
+            {STATUSES.map((s) => (
+              <a href={qs({ status: s.id })} class:list={['chip', { 'is-on': st === s.id }]}>{s.label} <span>{counts[s.id] || 0}</span></a>
+            ))}
+          </nav>
+
+          {leads.length === 0 ? (
+            <div class="panel empty">
+              <p class="mono muted">{q || isStatus(st) ? 'Nic neodpovídá filtru.' : 'Zatím žádné poptávky. Jakmile někdo odešle formulář na webu, objeví se tady.'}</p>
+            </div>
+          ) : (
+            <div class="table panel" role="table">
+              <div class="row row--head mono" role="row">
+                <span role="columnheader">Firma / kontakt</span>
+                <span role="columnheader">Zpráva</span>
+                <span role="columnheader">Stav</span>
+                <span role="columnheader">Přišlo</span>
+              </div>
+              {leads.map((l) => (
+                <a class:list={['row', { 'is-new': l.status === 'new' }]} href={`/admin/lead/${l.id}`} role="row">
+                  <span class="who" role="cell">
+                    <strong>{l.company || l.name}</strong>
+                    <span class="muted">{l.company ? l.name : ''}{l.company ? ' · ' : ''}{l.email}</span>
+                  </span>
+                  <span class="msg muted" role="cell">{preview(l.message)}</span>
+                  <span role="cell"><span class={`tag tag--${l.status}`}>{statusLabel(l.status)}</span></span>
+                  <span class="when mono" role="cell" title={fmtDateTime(l.created_at)}>{ago(l.created_at)}</span>
+                </a>
+              ))}
+            </div>
+          )}
+        </>
+      ) : (
+        <section class="board">
+          {STATUSES.map((s) => {
+            const col = leads.filter((l) => l.status === s.id);
+            const sum = col.reduce((a, l) => a + (l.value || 0), 0);
+            return (
+              <div class="col">
+                <header class="col__head">
+                  <span class={`tag tag--${s.id}`}>{s.label}</span>
+                  <span class="mono faint">{col.length}{sum ? ` · ${czk(sum)}` : ''}</span>
+                </header>
+                <div class="col__list">
+                  {col.map((l) => (
+                    <a class="card panel" href={`/admin/lead/${l.id}`}>
+                      <strong>{l.company || l.name}</strong>
+                      <span class="muted">{l.company ? l.name : l.email}</span>
+                      <span class="card__meta mono faint"><span>{ago(l.created_at)}</span>{l.value ? <span>{czk(l.value)}</span> : null}</span>
+                    </a>
+                  ))}
+                  {col.length === 0 && <p class="col__empty mono faint">—</p>}
+                </div>
+              </div>
+            );
+          })}
+        </section>
+      )}
+    </>
+  )}
+</Admin>
+
+<style>
+  .head { display: flex; align-items: end; justify-content: space-between; gap: 24px; flex-wrap: wrap; margin-bottom: 24px; }
+  .head .eyebrow { margin-bottom: 8px; }
+  .search { width: min(100%, 360px); }
+
+  .kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 24px; }
+  @media (max-width: 860px) { .kpis { grid-template-columns: 1fr 1fr; } .kpi__n { font-size: 32px; } .kpi__n--sm { font-size: 22px; } }
+  .kpi { padding: 18px 20px; display: grid; gap: 6px; align-content: start; }
+  .kpi__n { font-size: 40px; font-weight: 600; letter-spacing: -0.04em; line-height: 1; font-variant-numeric: tabular-nums; }
+  .kpi__n--sm { font-size: 30px; }
+  .kpi__n.is-hot { color: var(--neon); text-shadow: 0 0 24px rgba(93, 255, 74, .35); }
+  .up { color: var(--lime); } .down { color: #ff9b9b; }
+
+  .filters { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+  .chip {
+    font-family: var(--mono); font-size: 12px; padding: 7px 11px; border-radius: 6px; border: 1px solid var(--line);
+    color: var(--tx-2); transition: border-color .2s, color .2s;
+  }
+  .chip span { color: var(--tx-3); margin-left: 4px; }
+  .chip:hover { color: var(--tx); border-color: var(--line-2); }
+  .chip.is-on { color: var(--tx); border-color: var(--lime); }
+  .chip.is-on span { color: var(--lime); }
+
+  .table { overflow: hidden; }
+  .row {
+    display: grid; grid-template-columns: minmax(220px, 1.1fr) minmax(0, 2fr) 150px 110px; gap: 20px; align-items: center;
+    padding: 14px 20px; border-top: 1px solid var(--line); transition: background .15s;
+  }
+  .row--head { border-top: 0; color: var(--tx-3); text-transform: uppercase; letter-spacing: .1em; font-size: 11px; padding-block: 12px; }
+  a.row:hover { background: var(--bg-3); }
+  a.row.is-new { box-shadow: inset 2px 0 0 var(--neon); }
+  .who { display: grid; gap: 2px; min-width: 0; }
+  .who > * { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .msg { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .when { color: var(--tx-2); text-align: right; }
+  @media (max-width: 860px) {
+    .row { grid-template-columns: 1fr auto; gap: 6px 12px; }
+    .row--head { display: none; }
+    .msg { grid-column: 1 / -1; grid-row: 2; }
+    .when { grid-column: 2; grid-row: 1; }
+    .row > [role='cell']:nth-child(3) { grid-column: 1; grid-row: 3; }
+  }
+
+  .empty { padding: 48px 24px; text-align: center; }
+
+  .board { display: grid; grid-template-columns: repeat(6, minmax(220px, 1fr)); gap: 12px; overflow-x: auto; padding-bottom: 8px; }
+  .col { display: grid; align-content: start; gap: 10px; min-width: 220px; }
+  .col__head > span:last-child { white-space: nowrap; }
+  .col__head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 4px 2px 8px; border-bottom: 1px solid var(--line); }
+  .col__list { display: grid; gap: 8px; }
+  .card { display: grid; gap: 3px; padding: 14px; transition: border-color .2s, transform .2s; }
+  .card:hover { border-color: var(--line-2); transform: translateY(-1px); }
+  .card > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .card__meta { display: flex; justify-content: space-between; margin-top: 6px; }
+  .col__empty { padding: 8px 2px; }
+</style>

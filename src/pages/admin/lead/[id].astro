@@ -1,0 +1,197 @@
+---
+import Admin from '../../../layouts/Admin.astro';
+import { db, hasDb, STATUSES, statusLabel, isStatus, type Lead, type LeadEvent } from '../../../lib/db';
+import { ago, czk, fmtDateTime } from '../../../lib/format';
+export const prerender = false;
+
+const id = Number(Astro.params.id);
+if (!Number.isInteger(id) || id <= 0 || !hasDb()) return Astro.redirect('/admin', 303);
+const s = await db();
+
+if (Astro.request.method === 'POST') {
+  const fd = await Astro.request.formData();
+  const action = String(fd.get('action') || '');
+  const [cur] = await s<Lead[]>`select * from leads where id = ${id}`;
+  if (!cur) return Astro.redirect('/admin', 303);
+
+  if (action === 'status') {
+    const next = String(fd.get('status') || '');
+    if (isStatus(next) && next !== cur.status) {
+      await s`update leads set status = ${next}, updated_at = now() where id = ${id}`;
+      await s`insert into lead_events (lead_id, kind, text) values (${id}, 'status', ${`${statusLabel(cur.status)} → ${statusLabel(next)}`})`;
+    }
+  } else if (action === 'note') {
+    const text = String(fd.get('text') || '').trim().slice(0, 4000);
+    if (text) {
+      await s`insert into lead_events (lead_id, kind, text) values (${id}, 'note', ${text})`;
+      await s`update leads set updated_at = now() where id = ${id}`;
+    }
+  } else if (action === 'meta') {
+    const owner = String(fd.get('owner') || '').trim().slice(0, 80);
+    const rawVal = String(fd.get('value') || '').replace(/[^\d]/g, '').slice(0, 10);
+    const value = rawVal ? Number(rawVal) : null;
+    await s`update leads set owner = ${owner}, value = ${value}, updated_at = now() where id = ${id}`;
+    const changes: string[] = [];
+    if (owner !== cur.owner) changes.push(`řeší: ${owner || '—'}`);
+    if (value !== cur.value) changes.push(`hodnota: ${czk(value)}`);
+    if (changes.length) await s`insert into lead_events (lead_id, kind, text) values (${id}, 'meta', ${changes.join(', ')})`;
+  } else if (action === 'delete' && fd.get('confirm') === 'smazat') {
+    await s`delete from leads where id = ${id}`;
+    return Astro.redirect('/admin', 303);
+  }
+  return Astro.redirect(`/admin/lead/${id}`, 303);
+}
+
+const [lead] = await s<Lead[]>`select * from leads where id = ${id}`;
+if (!lead) return Astro.redirect('/admin', 303);
+const events = await s<LeadEvent[]>`select * from lead_events where lead_id = ${id} order by at desc limit 200`;
+const [nav] = await s<{ prev: number | null; next: number | null }[]>`
+  select
+    (select id from leads where created_at > ${lead.created_at} order by created_at asc limit 1) as prev,
+    (select id from leads where created_at < ${lead.created_at} order by created_at desc limit 1) as next`;
+const telHref = lead.phone ? `tel:${lead.phone.replace(/[^\d+]/g, '')}` : '';
+const subject = encodeURIComponent('Cliqplace – vaše poptávka');
+---
+<Admin title={lead.company || lead.name}>
+  <div class="crumbs mono">
+    <a href="/admin">← Leady</a>
+    <span class="faint">#{String(lead.id).padStart(4, '0')}</span>
+    <span class="pager">
+      {nav.prev ? <a href={`/admin/lead/${nav.prev}`}>novější</a> : <span class="faint">novější</span>}
+      <span class="faint">/</span>
+      {nav.next ? <a href={`/admin/lead/${nav.next}`}>starší</a> : <span class="faint">starší</span>}
+    </span>
+  </div>
+
+  <section class="hero">
+    <div>
+      <p class="eyebrow">{fmtDateTime(lead.created_at)} · {ago(lead.created_at)}</p>
+      <h1 class="h1">{lead.company || lead.name}</h1>
+      {lead.company && <p class="muted big">{lead.name}</p>}
+    </div>
+    <span class={`tag tag--${lead.status}`}>{statusLabel(lead.status)}</span>
+  </section>
+
+  <div class="grid">
+    <div class="stack">
+      <section class="panel block">
+        <p class="eyebrow">Zpráva</p>
+        <p class="message">{lead.message}</p>
+      </section>
+
+      <section class="panel block">
+        <p class="eyebrow">Přidat poznámku</p>
+        <form method="post" class="note">
+          <input type="hidden" name="action" value="note" />
+          <textarea class="input" name="text" rows="3" placeholder="Volal jsem, domluvené demo na čtvrtek…" required></textarea>
+          <button class="btn" type="submit">Uložit poznámku</button>
+        </form>
+      </section>
+
+      <section class="panel block">
+        <p class="eyebrow">Historie</p>
+        <ol class="timeline">
+          {events.map((e) => (
+            <li class:list={['ev', `ev--${e.kind}`]}>
+              <span class="ev__at mono faint" title={fmtDateTime(e.at)}>{fmtDateTime(e.at)}</span>
+              <span class="ev__kind mono">{e.kind === 'note' ? 'poznámka' : e.kind === 'status' ? 'stav' : e.kind === 'created' ? 'vytvořeno' : 'úprava'}</span>
+              <p class="ev__text">{e.text}</p>
+            </li>
+          ))}
+        </ol>
+      </section>
+    </div>
+
+    <aside class="stack">
+      <section class="panel block">
+        <p class="eyebrow">Kontakt</p>
+        <dl class="kv">
+          <dt>E-mail</dt><dd><a class="link" href={`mailto:${lead.email}?subject=${subject}`}>{lead.email}</a></dd>
+          <dt>Telefon</dt><dd>{telHref ? <a class="link" href={telHref}>{lead.phone}</a> : <span class="faint">—</span>}</dd>
+          <dt>Firma</dt><dd>{lead.company || <span class="faint">—</span>}</dd>
+          <dt>Zdroj</dt><dd class="mono">{lead.source || 'web'}</dd>
+          <dt>Souhlas</dt><dd class="mono">{lead.consent_at ? fmtDateTime(lead.consent_at) : '—'}</dd>
+        </dl>
+      </section>
+
+      <section class="panel block">
+        <p class="eyebrow">Stav</p>
+        <form method="post" class="statuses">
+          <input type="hidden" name="action" value="status" />
+          {STATUSES.map((st) => (
+            <button type="submit" name="status" value={st.id} class:list={['st', { 'is-on': st.id === lead.status }]} aria-pressed={st.id === lead.status ? 'true' : 'false'}>
+              {st.label}
+            </button>
+          ))}
+        </form>
+      </section>
+
+      <section class="panel block">
+        <p class="eyebrow">Obchod</p>
+        <form method="post" class="meta">
+          <input type="hidden" name="action" value="meta" />
+          <label><span class="mono muted">Řeší</span><input class="input" name="owner" value={lead.owner} placeholder="Jméno obchodníka" maxlength="80" /></label>
+          <label><span class="mono muted">Odhad hodnoty (Kč)</span><input class="input" name="value" value={lead.value ?? ''} inputmode="numeric" placeholder="0" /></label>
+          <button class="ghost" type="submit">Uložit</button>
+        </form>
+      </section>
+
+      <details class="panel block danger">
+        <summary class="mono">Smazat lead</summary>
+        <form method="post" class="meta">
+          <input type="hidden" name="action" value="delete" />
+          <label><span class="mono muted">Pro potvrzení napište „smazat“</span><input class="input" name="confirm" autocomplete="off" required pattern="smazat" /></label>
+          <button class="ghost ghost--danger" type="submit">Smazat natrvalo</button>
+        </form>
+      </details>
+    </aside>
+  </div>
+</Admin>
+
+<style>
+  .crumbs { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; color: var(--tx-2); }
+  .crumbs a:hover { color: var(--lime); }
+  .pager { margin-left: auto; display: flex; gap: 8px; }
+  .hero { display: flex; align-items: start; justify-content: space-between; gap: 20px; margin-bottom: 24px; }
+  .hero .eyebrow { margin-bottom: 8px; }
+  .big { font-size: 17px; margin-top: 4px; }
+
+  .grid { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 16px; align-items: start; }
+  @media (max-width: 960px) { .grid { grid-template-columns: 1fr; } }
+  .stack { display: grid; gap: 16px; }
+  .block { padding: 20px; display: grid; gap: 14px; }
+  .message { white-space: pre-wrap; font-size: 15px; line-height: 1.65; }
+
+  .note { display: grid; gap: 10px; justify-items: start; }
+  .note textarea { resize: vertical; min-height: 84px; }
+
+  .timeline { list-style: none; padding: 0; display: grid; }
+  .ev { display: grid; grid-template-columns: 150px 90px 1fr; gap: 4px 14px; padding: 12px 0; border-top: 1px solid var(--line); }
+  .ev:first-child { border-top: 0; padding-top: 0; }
+  .ev__kind { color: var(--tx-2); text-transform: uppercase; letter-spacing: .08em; font-size: 11px; }
+  .ev--note .ev__kind { color: var(--lime); }
+  .ev--status .ev__kind { color: #8fd3ff; }
+  .ev__text { white-space: pre-wrap; }
+  @media (max-width: 640px) { .ev { grid-template-columns: 1fr auto; } .ev__text { grid-column: 1 / -1; } }
+
+  .kv { display: grid; grid-template-columns: 80px 1fr; gap: 10px 14px; }
+  .kv dt { font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--tx-3); padding-top: 2px; }
+  .kv dd { margin: 0; overflow-wrap: anywhere; }
+  .link { color: var(--lime); border-bottom: 1px solid rgba(199, 255, 156, .3); }
+  .link:hover { border-color: var(--lime); }
+
+  .statuses { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .st {
+    font-family: var(--mono); font-size: 12px; text-align: left; padding: 9px 11px; border-radius: 7px; cursor: pointer;
+    background: var(--bg); border: 1px solid var(--line-2); color: var(--tx-2); transition: border-color .2s, color .2s;
+  }
+  .st:hover { color: var(--tx); border-color: var(--tx-3); }
+  .st.is-on { color: #07110a; background: var(--lime); border-color: var(--lime); font-weight: 600; }
+
+  .meta { display: grid; gap: 12px; justify-items: start; }
+  .meta label { display: grid; gap: 6px; width: 100%; }
+  .danger summary { cursor: pointer; color: var(--tx-3); list-style: none; }
+  .danger summary::-webkit-details-marker { display: none; }
+  .danger[open] summary { color: #ff9b9b; }
+  .ghost--danger { color: #ff9b9b; border-color: rgba(255, 155, 155, .35); }
+</style>

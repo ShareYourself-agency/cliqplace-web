@@ -1,4 +1,5 @@
 import type { APIRoute } from 'astro';
+import { hasDb, insertLead } from '../../lib/db';
 
 export const prerender = false;
 
@@ -6,6 +7,7 @@ export const prerender = false;
    RESEND_API_KEY  – API klíč z resend.com
    CONTACT_TO      – kam chodí poptávky (výchozí info@cliqplace.cz)
    CONTACT_FROM    – odesílatel z ověřené domény, např. "Web Cliqplace <web@cliqplace.cz>"
+   DATABASE_URL    – Postgres pro admin /admin (leady se ukládají i bez e-mailu)
 ------------------------------------------------------------------------------- */
 
 const MAX_BODY = 20_000;
@@ -101,44 +103,61 @@ export const POST: APIRoute = async ({ request, clientAddress, url }) => {
   const apiKey = process.env.RESEND_API_KEY;
   const to = process.env.CONTACT_TO || 'info@cliqplace.cz';
   const from = process.env.CONTACT_FROM || 'Web Cliqplace <onboarding@resend.dev>';
-  if (!apiKey) {
-    console.error('[contact] RESEND_API_KEY is not configured');
+  if (!apiKey && !hasDb()) {
+    console.error('[contact] neither DATABASE_URL nor RESEND_API_KEY is configured');
     return respond(503, { error: 'Formulář je dočasně nedostupný. Napište nám prosím na info@cliqplace.cz.' });
   }
 
-  const text = [
-    'Nová poptávka z webu cliqplace.cz',
-    '',
-    `Firma: ${f.company || '—'}`,
-    `Jméno: ${f.name}`,
-    `E-mail: ${f.email}`,
-    `Telefon: ${f.phone || '—'}`,
-    '',
-    'Zpráva:',
-    f.message,
-    '',
-    '—',
-    `Souhlas se zpracováním osobních údajů: ano (${new Date().toISOString()})`,
-  ].join('\n');
-
-  try {
-    const res = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        from,
-        to: [to],
-        reply_to: f.email,
-        subject: `Poptávka z webu: ${f.company || f.name}`.slice(0, 150),
-        text,
-      }),
-    });
-    if (!res.ok) {
-      console.error('[contact] Resend error', res.status, await res.text().catch(() => ''));
-      return respond(502, { error: 'Zprávu se nepodařilo odeslat. Napište nám prosím na info@cliqplace.cz.' });
+  // 1) store the lead (admin /admin)
+  let leadId: number | null = null;
+  if (hasDb()) {
+    try {
+      const ref = request.headers.get('referer');
+      const source = ref ? oneLine(clean(new URL(ref).pathname + new URL(ref).search, 200)) : 'web';
+      leadId = await insertLead({ company: f.company, name: f.name, email: f.email, phone: f.phone, message: f.message, source });
+    } catch (e) {
+      console.error('[contact] db insert failed', e);
     }
-  } catch (e) {
-    console.error('[contact] send failed', e);
+  }
+
+  // 2) e-mail notification
+  let mailed = false;
+  if (apiKey) {
+    const text = [
+      'Nová poptávka z webu cliqplace.cz',
+      '',
+      `Firma: ${f.company || '—'}`,
+      `Jméno: ${f.name}`,
+      `E-mail: ${f.email}`,
+      `Telefon: ${f.phone || '—'}`,
+      '',
+      'Zpráva:',
+      f.message,
+      '',
+      '—',
+      leadId ? `V administraci: ${new URL(`/admin/lead/${leadId}`, url).toString()}` : '',
+      `Souhlas se zpracováním osobních údajů: ano (${new Date().toISOString()})`,
+    ].filter((l, i, a) => l !== '' || a[i - 1] !== '').join('\n');
+    try {
+      const res = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          from,
+          to: to.split(',').map((x) => x.trim()).filter(Boolean),
+          reply_to: f.email,
+          subject: `Poptávka z webu: ${f.company || f.name}`.slice(0, 150),
+          text,
+        }),
+      });
+      mailed = res.ok;
+      if (!res.ok) console.error('[contact] Resend error', res.status, await res.text().catch(() => ''));
+    } catch (e) {
+      console.error('[contact] send failed', e);
+    }
+  }
+
+  if (!leadId && !mailed) {
     return respond(502, { error: 'Zprávu se nepodařilo odeslat. Napište nám prosím na info@cliqplace.cz.' });
   }
 

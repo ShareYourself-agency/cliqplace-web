@@ -1,0 +1,49 @@
+---
+import Admin from '../../layouts/Admin.astro';
+import { authConfigured, checkPassword, isAuthed, loginBlocked, noteFail, startSession } from '../../lib/auth';
+export const prerender = false;
+
+if (isAuthed(Astro.cookies)) return Astro.redirect('/admin', 303);
+
+let error = '';
+if (!authConfigured()) error = 'Administrace ještě není nastavená (chybí ADMIN_PASSWORD / ADMIN_SECRET).';
+else if (Astro.request.method === 'POST') {
+  const ip = (Astro.request.headers.get('x-forwarded-for') || '').split(',')[0].trim() || Astro.clientAddress || '?';
+  if (loginBlocked(ip)) error = 'Příliš mnoho pokusů. Zkuste to za 15 minut.';
+  else {
+    const fd = await Astro.request.formData();
+    if (checkPassword(String(fd.get('password') || ''))) {
+      startSession(Astro.cookies, Astro.url.protocol === 'https:');
+      return Astro.redirect('/admin', 303);
+    }
+    noteFail(ip);
+    await new Promise((r) => setTimeout(r, 600));
+    error = 'Špatné heslo.';
+  }
+}
+---
+<Admin title="Přihlášení" bare>
+  <main class="login">
+    <form class="login__card panel" method="post">
+      <p class="eyebrow">cliqplace / leads</p>
+      <h1 class="h1">Přihlášení</h1>
+      <label class="login__field">
+        <span class="mono muted">Heslo</span>
+        <input class="input" type="password" name="password" autocomplete="current-password" required autofocus />
+      </label>
+      {error && <p class="login__err mono">{error}</p>}
+      <button class="btn" type="submit">Vstoupit</button>
+    </form>
+  </main>
+</Admin>
+
+<style>
+  .login { min-height: 100dvh; display: grid; place-items: center; padding: 24px; }
+  .login__card { width: min(100%, 380px); padding: 32px; display: grid; gap: 18px; position: relative; overflow: hidden; }
+  .login__card::before {
+    content: ''; position: absolute; inset: 0 0 auto; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--neon), transparent);
+  }
+  .login__field { display: grid; gap: 8px; }
+  .login__err { color: #ff9b9b; }
+</style>
