@@ -6,8 +6,8 @@ export const prerender = false;
 
 /* ---- configuration (Vercel → Project → Settings → Environment Variables) ----
    RESEND_API_KEY  – API klíč z resend.com
-   CONTACT_TO      – kam chodí poptávky (výchozí info@cliqplace.cz)
-   CONTACT_FROM    – odesílatel z ověřené domény, např. "Web Cliqplace <web@cliqplace.cz>"
+   CONTACT_TO      – kam chodí poptávky (výchozí milan@cliqplace.cz, víc adres oddělit čárkou)
+   CONTACT_FROM    – odesílatel z ověřené domény (výchozí "Web Cliqplace <web@cliqplace.cz>")
    DATABASE_URL    – Postgres pro admin /admin (leady se ukládají i bez e-mailu)
 ------------------------------------------------------------------------------- */
 
@@ -34,6 +34,32 @@ const clean = (v: unknown, max: number) =>
     .slice(0, max);
 
 const oneLine = (v: string) => v.replace(/[\r\n]+/g, ' ');
+
+const esc = (v: string) => v.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
+
+/** Clean notification e-mail (inline styles only – e-mail clients ignore <style>) */
+function leadHtml(f: { company: string; name: string; email: string; phone: string; message: string }, page: string) {
+  const row = (k: string, v: string) =>
+    `<tr><td style="padding:10px 0;border-top:1px solid #e3e7e2;color:#6b766f;font:12px/1.4 ui-monospace,Menlo,monospace;text-transform:uppercase;letter-spacing:.06em;width:120px;vertical-align:top">${k}</td><td style="padding:10px 0;border-top:1px solid #e3e7e2;font:15px/1.5 -apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#0d1513">${v}</td></tr>`;
+  const tel = f.phone ? `<a href="tel:${esc(f.phone.replace(/[^\d+]/g, ''))}" style="color:#2a4633">${esc(f.phone)}</a>` : '—';
+  const when = new Intl.DateTimeFormat('cs-CZ', { timeZone: 'Europe/Prague', dateStyle: 'medium', timeStyle: 'short' }).format(new Date());
+  return `<!doctype html><html lang="cs"><body style="margin:0;background:#f4f6f3;padding:24px">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;margin:0 auto;background:#fff;border:1px solid #e3e7e2;border-radius:12px;overflow:hidden">
+<tr><td style="background:#0d1513;padding:18px 24px;font:600 16px/1 -apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#fff">cliqplace<span style="color:#c7ff9c;font-weight:400"> · nová poptávka</span></td></tr>
+<tr><td style="padding:24px">
+<p style="margin:0 0 4px;font:12px/1.4 ui-monospace,Menlo,monospace;color:#6b766f;text-transform:uppercase;letter-spacing:.08em">${esc(when)}${page ? ` · ${esc(page)}` : ''}</p>
+<h1 style="margin:0 0 18px;font:650 24px/1.2 -apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#0d1513;letter-spacing:-.02em">${esc(f.company || f.name)}</h1>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+${row('Firma', esc(f.company || '—'))}
+${row('Jméno', esc(f.name))}
+${row('E-mail', `<a href="mailto:${esc(f.email)}" style="color:#2a4633">${esc(f.email)}</a>`)}
+${row('Telefon', tel)}
+${row('Zpráva', esc(f.message).replace(/\n/g, '<br>'))}
+</table>
+<p style="margin:22px 0 0"><a href="mailto:${esc(f.email)}?subject=${encodeURIComponent('Re: Vaše poptávka – Cliqplace')}" style="display:inline-block;background:#c7ff9c;color:#0d1513;font:600 14px/1 -apple-system,Segoe UI,Roboto,Arial,sans-serif;padding:12px 18px;border-radius:8px;text-decoration:none">Odpovědět zákazníkovi</a></p>
+<p style="margin:18px 0 0;font:12px/1.5 -apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#85918a">Odesláno z formuláře na cliqplace.cz. Odesílatel souhlasil se zpracováním osobních údajů. Na tento e-mail můžete rovnou odpovědět.</p>
+</td></tr></table></body></html>`;
+}
 
 function rateLimited(ip: string) {
   const now = Date.now();
@@ -102,8 +128,8 @@ export const POST: APIRoute = async ({ request, clientAddress, url }) => {
   if (errors.length) return respond(422, { error: `Zkontrolujte prosím: ${errors.join(', ')}.` });
 
   const apiKey = process.env.RESEND_API_KEY;
-  const to = process.env.CONTACT_TO || 'info@cliqplace.cz';
-  const from = process.env.CONTACT_FROM || 'Web Cliqplace <onboarding@resend.dev>';
+  const to = process.env.CONTACT_TO || 'milan@cliqplace.cz';
+  const from = process.env.CONTACT_FROM || 'Web Cliqplace <web@cliqplace.cz>';
   if (!apiKey && !hasDb() && !hasBlob()) {
     console.error('[contact] neither DATABASE_URL nor RESEND_API_KEY is configured');
     return respond(503, { error: 'Formulář je dočasně nedostupný. Napište nám prosím na info@cliqplace.cz.' });
@@ -149,7 +175,6 @@ export const POST: APIRoute = async ({ request, clientAddress, url }) => {
       f.message,
       '',
       '—',
-      leadId ? `V administraci: ${new URL(`/admin/lead/${leadId}`, url).toString()}` : '',
       `Souhlas se zpracováním osobních údajů: ano (${new Date().toISOString()})`,
     ].filter((l, i, a) => l !== '' || a[i - 1] !== '').join('\n');
     try {
@@ -162,6 +187,7 @@ export const POST: APIRoute = async ({ request, clientAddress, url }) => {
           reply_to: f.email,
           subject: `Poptávka z webu: ${f.company || f.name}`.slice(0, 150),
           text,
+          html: leadHtml(f, page),
         }),
       });
       mailed = res.ok;
