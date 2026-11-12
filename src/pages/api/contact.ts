@@ -6,7 +6,7 @@ export const prerender = false;
 
 /* ---- configuration (Vercel → Project → Settings → Environment Variables) ----
    RESEND_API_KEY  – API klíč z resend.com
-   CONTACT_TO      – kam chodí poptávky (výchozí milan@cliqplace.cz, víc adres oddělit čárkou)
+   CONTACT_TO      – kam chodí poptávky (výchozí info@cliqplace.cz, víc adres oddělit čárkou)
    CONTACT_FROM    – odesílatel z ověřené domény (výchozí "Web Cliqplace <web@cliqplace.cz>")
    DATABASE_URL    – Postgres pro admin /admin (leady se ukládají i bez e-mailu)
 ------------------------------------------------------------------------------- */
@@ -128,7 +128,7 @@ export const POST: APIRoute = async ({ request, clientAddress, url }) => {
   if (errors.length) return respond(422, { error: `Zkontrolujte prosím: ${errors.join(', ')}.` });
 
   const apiKey = process.env.RESEND_API_KEY;
-  const to = process.env.CONTACT_TO || 'milan@cliqplace.cz';
+  const to = process.env.CONTACT_TO || 'info@cliqplace.cz';
   const from = process.env.CONTACT_FROM || 'Web Cliqplace <web@cliqplace.cz>';
   if (!apiKey && !hasDb() && !hasBlob()) {
     console.error('[contact] neither DATABASE_URL nor RESEND_API_KEY is configured');
