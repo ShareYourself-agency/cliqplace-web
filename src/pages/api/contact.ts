@@ -1,4 +1,5 @@
 import type { APIRoute } from 'astro';
+import { createHash } from 'node:crypto';
 import { hasDb, insertLead } from '../../lib/db';
 import { hasBlob, parkInquiry } from '../../lib/backup';
 
@@ -9,6 +10,7 @@ export const prerender = false;
    CONTACT_TO      – kam chodí poptávky (výchozí info@cliqplace.cz, víc adres oddělit čárkou)
    CONTACT_FROM    – odesílatel z ověřené domény (výchozí "Web Cliqplace <web@cliqplace.cz>")
    DATABASE_URL    – Postgres pro admin /admin (leady se ukládají i bez e-mailu)
+   META_CAPI_TOKEN – přístupový token Meta Conversions API (Lead se odesílá jen se souhlasem s marketingovými cookies)
 ------------------------------------------------------------------------------- */
 
 const MAX_BODY = 20_000;
@@ -59,6 +61,48 @@ ${row('Zpráva', esc(f.message).replace(/\n/g, '<br>'))}
 <p style="margin:22px 0 0"><a href="mailto:${esc(f.email)}?subject=${encodeURIComponent('Re: Vaše poptávka – Cliqplace')}" style="display:inline-block;background:#c7ff9c;color:#0d1513;font:600 14px/1 -apple-system,Segoe UI,Roboto,Arial,sans-serif;padding:12px 18px;border-radius:8px;text-decoration:none">Odpovědět zákazníkovi</a></p>
 <p style="margin:18px 0 0;font:12px/1.5 -apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#85918a">Odesláno z formuláře na cliqplace.cz. Odesílatel souhlasil se zpracováním osobních údajů. Na tento e-mail můžete rovnou odpovědět.</p>
 </td></tr></table></body></html>`;
+}
+
+/* ---- Meta Conversions API (server-side Lead, deduplikace s Pixelem přes event_id) ---- */
+const META_PIXEL_ID = '1093035066818984';
+const sha = (v: string) => createHash('sha256').update(v).digest('hex');
+async function sendMetaLead(opts: { eventId: string; email: string; phone: string; name: string; ip: string; ua: string; fbp: string; fbc: string; url: string }) {
+  const token = process.env.META_CAPI_TOKEN;
+  if (!token || !opts.eventId) return;
+  let ph = opts.phone.replace(/[^\d]/g, '');
+  if (ph.length === 9) ph = `420${ph}`;
+  if (ph.startsWith('00')) ph = ph.slice(2);
+  const [fn, ...rest] = opts.name.trim().toLowerCase().split(/\s+/);
+  const ln = rest.join(' ');
+  const user_data: Record<string, unknown> = {
+    em: [sha(opts.email.trim().toLowerCase())],
+    client_ip_address: opts.ip,
+    client_user_agent: opts.ua,
+    country: [sha('cz')],
+  };
+  if (ph.length >= 9) user_data.ph = [sha(ph)];
+  if (fn) user_data.fn = [sha(fn)];
+  if (ln) user_data.ln = [sha(ln)];
+  if (/^fb\.\d\.\d+\.[\w-]+$/.test(opts.fbp)) user_data.fbp = opts.fbp;
+  if (/^fb\.\d\.\d+\.[\w-]+$/.test(opts.fbc)) user_data.fbc = opts.fbc;
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 4000);
+  try {
+    const res = await fetch(`https://graph.facebook.com/v25.0/${META_PIXEL_ID}/events`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      signal: ctrl.signal,
+      body: JSON.stringify({
+        data: [{ event_name: 'Lead', event_time: Math.floor(Date.now() / 1000), event_id: opts.eventId, action_source: 'website', event_source_url: opts.url, user_data, custom_data: { content_name: 'Poptávka z webu', currency: 'CZK', value: 1 } }],
+        access_token: token,
+      }),
+    });
+    if (!res.ok) console.error('[contact] Meta CAPI error', res.status, (await res.text().catch(() => '')).slice(0, 300));
+  } catch (e) {
+    console.error('[contact] Meta CAPI failed', e);
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 function rateLimited(ip: string) {
@@ -195,6 +239,17 @@ export const POST: APIRoute = async ({ request, clientAddress, url }) => {
     } catch (e) {
       console.error('[contact] send failed', e);
     }
+  }
+
+  // 3) Meta Conversions API – only with marketing-cookie consent
+  if (clean(raw.consent_marketing, 2) === '1') {
+    await sendMetaLead({
+      eventId: oneLine(clean(raw.event_id, 80)),
+      email: f.email, phone: f.phone, name: f.name, ip,
+      ua: oneLine(clean(request.headers.get('user-agent'), 400)),
+      fbp: oneLine(clean(raw.fbp, 120)), fbc: oneLine(clean(raw.fbc, 300)),
+      url: ref || new URL('/kontakt', url).toString(),
+    });
   }
 
   if (!leadId && !parked && !mailed) {

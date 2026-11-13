@@ -1,0 +1,66 @@
+---
+/* Cookie lišta – logika v src/scripts/consent.ts */
+---
+<div class="cbar" data-cookiebar hidden role="dialog" aria-modal="false" aria-labelledby="cbar-title" aria-describedby="cbar-text">
+  <div class="cbar__inner">
+    <div class="cbar__main" data-cookiebar-main>
+      <p class="cbar__title" id="cbar-title">Cookies na cliqplace.cz</p>
+      <p class="cbar__text" id="cbar-text">
+        Nezbytné cookies potřebujeme, aby web fungoval. S vaším souhlasem použijeme i analytické a marketingové cookies (Google, Meta), díky kterým web zlepšujeme a ukazujeme relevantnější reklamu. <a href="/cookies">Více o&nbsp;cookies</a>
+      </p>
+    </div>
+    <div class="cbar__prefs" data-cookiebar-prefs hidden>
+      <p class="cbar__title">Nastavení cookies</p>
+      <label class="cbar__opt cbar__opt--locked">
+        <input type="checkbox" checked disabled />
+        <span><strong>Nezbytné</strong> Zajišťují základní funkce webu. Nelze vypnout.</span>
+      </label>
+      <label class="cbar__opt">
+        <input type="checkbox" data-consent="a" />
+        <span><strong>Analytické</strong> Měření návštěvnosti (Google Analytics), abychom věděli, co na webu funguje.</span>
+      </label>
+      <label class="cbar__opt">
+        <input type="checkbox" data-consent="m" />
+        <span><strong>Marketingové</strong> Měření a cílení reklam (Google Ads, Meta Pixel).</span>
+      </label>
+    </div>
+    <div class="cbar__actions">
+      <button type="button" class="btn btn--ghost cbar__btn" data-cookie-action="settings">Nastavení</button>
+      <button type="button" class="btn btn--ghost cbar__btn" data-cookie-action="save" hidden>Uložit výběr</button>
+      <button type="button" class="btn btn--ghost cbar__btn" data-cookie-action="reject">Odmítnout vše</button>
+      <button type="button" class="btn cbar__btn" data-cookie-action="accept">Přijmout vše</button>
+    </div>
+  </div>
+</div>
+
+<style>
+  .cbar {
+    position: fixed; z-index: 90; left: 50%; bottom: max(1rem, env(safe-area-inset-bottom));
+    transform: translateX(-50%); width: min(calc(100% - 2rem), 60rem);
+    background: rgba(12, 20, 18, 0.94); color: #fff; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 1.25rem;
+    box-shadow: 0 24px 60px -20px rgba(0, 0, 0, 0.55);
+    animation: cbar-in 0.5s cubic-bezier(.2, .8, .2, 1) both;
+  }
+  .cbar[hidden] { display: none; }
+  @keyframes cbar-in { from { opacity: 0; transform: translate(-50%, 1rem); } }
+  .cbar__inner { display: grid; gap: 1rem; padding: 1.25rem 1.4rem; }
+  @media (min-width: 900px) {
+    .cbar__inner { grid-template-columns: 1fr auto; align-items: end; padding: 1.4rem 1.6rem; }
+  }
+  .cbar__title { font-weight: 650; font-size: 1.02rem; margin: 0 0 0.35rem; }
+  .cbar__text { margin: 0; font-size: 0.9rem; line-height: 1.5; color: rgba(255, 255, 255, 0.78); }
+  .cbar__text a { color: var(--c-lime, #c7ff9c); text-decoration: underline; text-underline-offset: 2px; }
+  .cbar__prefs { display: grid; gap: 0.6rem; }
+  .cbar__opt { display: grid; grid-template-columns: auto 1fr; gap: 0.7rem; align-items: start; font-size: 0.88rem; line-height: 1.45; color: rgba(255, 255, 255, 0.75); cursor: pointer; }
+  .cbar__opt strong { display: block; color: #fff; font-weight: 600; }
+  .cbar__opt input { width: 1.1rem; height: 1.1rem; margin-top: 0.15rem; accent-color: #9be36d; }
+  .cbar__opt--locked { opacity: 0.7; cursor: default; }
+  .cbar__actions { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: flex-end; }
+  .cbar__btn { padding: 0.7rem 1.1rem; font-size: 0.9rem; }
+  .cbar__btn[hidden], .cbar__prefs[hidden], .cbar__main[hidden] { display: none; }
+  @media (max-width: 560px) {
+    .cbar__actions { display: grid; grid-template-columns: 1fr 1fr; }
+    .cbar__actions [data-cookie-action='accept'] { grid-column: 1 / -1; order: -1; }
+  }
+</style>

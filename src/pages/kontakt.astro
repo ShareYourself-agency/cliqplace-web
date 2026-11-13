@@ -73,6 +73,7 @@ import { site } from '../data/site';
 </Base>
 
 <script>
+  import { getConsent, metaCookies, trackLead } from '../scripts/consent';
   const form = document.querySelector<HTMLFormElement>('[data-contact-form]');
   const status = document.querySelector<HTMLElement>('[data-form-status]');
   const ts = form?.querySelector<HTMLInputElement>('[data-ts]');
@@ -102,7 +103,8 @@ import { site } from '../data/site';
     btn?.setAttribute('disabled', '');
     say('Odesíláme…');
     try {
-      const data = Object.fromEntries(new FormData(form).entries());
+      const eventId = `lead-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+      const data = { ...Object.fromEntries(new FormData(form).entries()), event_id: eventId, consent_marketing: getConsent()?.m ? '1' : '', ...metaCookies() };
       const res = await fetch('/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
@@ -113,6 +115,7 @@ import { site } from '../data/site';
         form.reset();
         if (ts) ts.value = String(Date.now());
         say('Děkujeme, zpráva byla odeslána. Ozveme se vám co nejdříve.', 'ok');
+        try { trackLead(eventId); } catch {}
       } else {
         say(json.error || 'Zprávu se nepodařilo odeslat. Napište nám prosím na info@cliqplace.cz.', 'err');
       }

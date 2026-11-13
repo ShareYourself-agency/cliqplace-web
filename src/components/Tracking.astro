@@ -1,0 +1,52 @@
+---
+/* Měřicí kódy – Google Tag Manager, Google Ads, Meta Pixel.
+   Google tagy běží v Consent Mode v2 (bez souhlasu jen anonymní pingy bez cookies),
+   Meta Pixel se načte AŽ po souhlasu s marketingovými cookies. Souhlas: src/scripts/consent.ts */
+export const GTM_ID = 'GTM-T3XTTKK8';
+export const ADS_ID = 'AW-18469650100';
+export const META_PIXEL_ID = '1093035066818984';
+const cfg = JSON.stringify({ gtm: GTM_ID, ads: ADS_ID, pixel: META_PIXEL_ID });
+---
+<script is:inline define:vars={{ cfg }}>
+  (function (w, d) {
+    var C = JSON.parse(cfg);
+    w.CQ_TRACKING = C;
+    w.dataLayer = w.dataLayer || [];
+    w.gtag = function () { w.dataLayer.push(arguments); };
+    var saved = null;
+    try { saved = JSON.parse(localStorage.getItem('cq_consent') || 'null'); } catch (e) {}
+    if (saved && (!saved.v || Date.now() - saved.t > 365 * 864e5)) saved = null;
+    var m = !!(saved && saved.m), a = !!(saved && saved.a);
+    w.gtag('consent', 'default', {
+      ad_storage: 'denied', ad_user_data: 'denied', ad_personalization: 'denied', analytics_storage: 'denied',
+      functionality_storage: 'granted', security_storage: 'granted', wait_for_update: 500,
+    });
+    w.gtag('set', 'ads_data_redaction', true);
+    if (saved) {
+      w.gtag('consent', 'update', {
+        ad_storage: m ? 'granted' : 'denied', ad_user_data: m ? 'granted' : 'denied',
+        ad_personalization: m ? 'granted' : 'denied', analytics_storage: a ? 'granted' : 'denied',
+      });
+    }
+    w.dataLayer.push({ event: 'cq_consent_state', consent_analytics: a, consent_marketing: m });
+    function load(src) { var s = d.createElement('script'); s.async = true; s.src = src; d.head.appendChild(s); }
+    // Google Tag Manager
+    w.dataLayer.push({ 'gtm.start': Date.now(), event: 'gtm.js' });
+    load('https://www.googletagmanager.com/gtm.js?id=' + C.gtm);
+    // Google Ads (konverze „Nákup“ = odeslaná poptávka)
+    load('https://www.googletagmanager.com/gtag/js?id=' + C.ads);
+    w.gtag('js', new Date());
+    w.gtag('config', C.ads);
+    // Meta Pixel – jen se souhlasem
+    w.cqLoadPixel = function () {
+      if (w.fbq) return;
+      var n = (w.fbq = function () { n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments); });
+      if (!w._fbq) w._fbq = n;
+      n.push = n; n.loaded = true; n.version = '2.0'; n.queue = [];
+      load('https://connect.facebook.net/en_US/fbevents.js');
+      w.fbq('init', C.pixel);
+      w.fbq('track', 'PageView');
+    };
+    if (m) w.cqLoadPixel();
+  })(window, document);
+</script>

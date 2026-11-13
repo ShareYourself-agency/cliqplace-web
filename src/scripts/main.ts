@@ -1,5 +1,7 @@
 /* Cliqplace – interactions & animations (vanilla, progressive enhancement) */
 
+import { initConsent } from './consent';
+
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /* ------------------------------------------------------------------ header */
@@ -461,6 +463,7 @@ function initFloat() {
   });
 }
 
+initConsent();
 initSplit();
 initShine();
 initTilt();

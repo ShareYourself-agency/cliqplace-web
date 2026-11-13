@@ -14,21 +14,6 @@ export default defineConfig({
   prefetch: { prefetchAll: true, defaultStrategy: 'hover' },
   security: {
     checkOrigin: true,
-    csp: {
-      algorithm: 'SHA-256',
-      directives: [
-        "default-src 'self'",
-        "img-src 'self' data:",
-        "media-src 'self'",
-        "font-src 'self'",
-        "connect-src 'self'",
-        "form-action 'self'",
-        "base-uri 'self'",
-        "object-src 'none'",
-        'upgrade-insecure-requests',
-      ],
-      scriptDirective: { resources: ["'self'"] },
-      styleDirective: { resources: ["'self'", { resource: "'unsafe-inline'", kind: 'attribute' }] },
-    },
+    // CSP je v vercel.json (kvůli Google Tag Manageru a Meta Pixelu)
   },
 });
