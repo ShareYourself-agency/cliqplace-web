@@ -78,12 +78,15 @@ export function initConsent() {
 /* ---- konverze po odeslání poptávky ---- */
 export function trackLead(eventId: string) {
   w.dataLayer?.push({ event: 'generate_lead', form_name: 'kontakt', lead_event_id: eventId });
-  w.gtag?.('event', 'conversion', {
-    send_to: 'AW-18469650100/HFXTCOep3YQdELT9gedE',
-    value: 1.0,
-    currency: 'CZK',
-    transaction_id: eventId,
-  });
+  // Google Ads konverze – „Nákup“ a „Odeslání formuláře“ (obě na odeslanou poptávku)
+  for (const label of ['HFXTCOep3YQdELT9gedE', 'cIkgCO_B2rodELT9gedE']) {
+    w.gtag?.('event', 'conversion', {
+      send_to: `AW-18469650100/${label}`,
+      value: 1.0,
+      currency: 'CZK',
+      transaction_id: eventId,
+    });
+  }
   if (getConsent()?.m) w.fbq?.('track', 'Lead', {}, { eventID: eventId });
 }
 
