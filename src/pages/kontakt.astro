@@ -40,8 +40,8 @@ import { site } from '../data/site';
               <label for="f-email">Email <span aria-hidden="true">*</span></label>
             </div>
             <div class="field field--full">
-              <textarea id="f-message" name="message" rows="4" required minlength="5" maxlength="4000" placeholder=" "></textarea>
-              <label for="f-message">Popište pro co hledáte řešení. <span aria-hidden="true">*</span></label>
+              <textarea id="f-message" name="message" rows="4" maxlength="4000" placeholder=" "></textarea>
+              <label for="f-message">Popište pro co hledáte řešení.</label>
             </div>
           </div>
 
@@ -99,7 +99,7 @@ import { site } from '../data/site';
       if (v !== el.value) el.value = v;
     });
   };
-  const LABELS: Record<string, string> = { name: 'jméno', email: 'e-mail (ve tvaru jmeno@firma.cz)', phone: 'telefon', message: 'popis (alespoň 5 znaků)', consent: 'souhlas se zpracováním údajů' };
+  const LABELS: Record<string, string> = { name: 'jméno', email: 'e-mail (ve tvaru jmeno@firma.cz)', phone: 'telefon', consent: 'souhlas se zpracováním údajů' };
   // po opravě pole hned zmizí červené označení
   form?.addEventListener('input', (e) => {
     const el = e.target as HTMLInputElement;

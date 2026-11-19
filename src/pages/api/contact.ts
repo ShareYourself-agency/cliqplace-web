@@ -59,7 +59,7 @@ ${row('Firma', esc(f.company || '—'))}
 ${row('Jméno', esc(f.name))}
 ${row('E-mail', `<a href="mailto:${esc(f.email)}" style="color:#2a4633">${esc(f.email)}</a>`)}
 ${row('Telefon', tel)}
-${row('Zpráva', esc(f.message).replace(/\n/g, '<br>'))}
+${row('Zpráva', (f.message ? esc(f.message).replace(/\n/g, '<br>') : '—'))}
 </table>
 <p style="margin:22px 0 0"><a href="mailto:${esc(f.email)}?subject=${encodeURIComponent('Re: Vaše poptávka – Cliqplace')}" style="display:inline-block;background:#c7ff9c;color:#0d1513;font:600 14px/1 -apple-system,Segoe UI,Roboto,Arial,sans-serif;padding:12px 18px;border-radius:8px;text-decoration:none">Odpovědět zákazníkovi</a></p>
 <p style="margin:18px 0 0;font:12px/1.5 -apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#85918a">Odesláno z formuláře na cliqplace.cz. Odesílatel souhlasil se zpracováním osobních údajů. Na tento e-mail můžete rovnou odpovědět.</p>
@@ -170,7 +170,6 @@ export const POST: APIRoute = async ({ request, clientAddress, url }) => {
   if (f.name.length < 2) errors.push('jméno');
   if (!EMAIL_RE.test(f.email)) errors.push('e-mail');
   if (f.phone && !PHONE_RE.test(f.phone)) errors.push('telefon');
-  if (f.message.length < 5) errors.push('popis');
   if (f.consent !== '1' && f.consent !== 'on' && f.consent !== 'true') errors.push('souhlas se zpracováním údajů');
   if (errors.length) return respond(422, { error: `Zkontrolujte prosím: ${errors.join(', ')}.` });
 
@@ -219,7 +218,7 @@ export const POST: APIRoute = async ({ request, clientAddress, url }) => {
       `Telefon: ${f.phone || '—'}`,
       '',
       'Zpráva:',
-      f.message,
+      f.message || '—',
       '',
       '—',
       `Souhlas se zpracováním osobních údajů: ano (${new Date().toISOString()})`,
