@@ -32,7 +32,7 @@ import { site } from '../data/site';
               <label for="f-name">Jméno a příjmení <span aria-hidden="true">*</span></label>
             </div>
             <div class="field">
-              <input id="f-phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" maxlength="40" pattern="[0-9+()\s\-]{6,40}" placeholder=" " />
+              <input id="f-phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" maxlength="40" pattern="[0-9+()\s\-./]{6,40}" placeholder=" " />
               <label for="f-phone">Tel. číslo</label>
             </div>
             <div class="field">
@@ -89,14 +89,37 @@ import { site } from '../data/site';
   if (qs.get('odeslano') === '1') say('Děkujeme, zpráva byla odeslána. Ozveme se vám co nejdříve.', 'ok');
   if (qs.get('chyba') === '1') say('Zprávu se nepodařilo odeslat. Zkontrolujte prosím pole nebo nám napište na info@cliqplace.cz.', 'err');
 
+  // Automatické vyplňování (hlavně iOS) vkládá neviditelné znaky a mezery – před kontrolou je uklidíme
+  const INVISIBLE = /[\u200B-\u200F\u202A-\u202E\u2060-\u2064\uFEFF\u00AD]/g;
+  const tidy = () => {
+    form?.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('input:not([type=checkbox]):not([type=hidden]), textarea').forEach((el) => {
+      let v = el.value.replace(INVISIBLE, '').replace(/\u00A0/g, ' ');
+      if (el.tagName === 'INPUT') v = v.trim().replace(/\s{2,}/g, ' ');
+      if (el.type === 'email') v = v.replace(/\s+/g, '');
+      if (v !== el.value) el.value = v;
+    });
+  };
+  const LABELS: Record<string, string> = { name: 'jméno', email: 'e-mail', phone: 'telefon', message: 'popis', consent: 'souhlas se zpracováním údajů' };
+  // po opravě pole hned zmizí červené označení
+  form?.addEventListener('input', (e) => {
+    const el = e.target as HTMLInputElement;
+    if (el.checkValidity()) el.closest('.field, .consent')?.classList.remove('is-invalid');
+  });
+  form?.addEventListener('change', (e) => {
+    const el = e.target as HTMLInputElement;
+    if (el.checkValidity()) el.closest('.field, .consent')?.classList.remove('is-invalid');
+  });
+
   form?.addEventListener('submit', async (e) => {
     e.preventDefault();
+    tidy();
     form.querySelectorAll('.field, .consent').forEach((f) => f.classList.remove('is-invalid'));
     if (!form.checkValidity()) {
       const invalid = Array.from(form.querySelectorAll<HTMLInputElement>('input, textarea')).filter((el) => !el.checkValidity());
       invalid.forEach((el) => el.closest('.field, .consent')?.classList.add('is-invalid'));
       invalid[0]?.focus();
-      say('Zkontrolujte prosím označená pole. Jméno, e-mail, popis a souhlas jsou povinné.', 'err');
+      const names = [...new Set(invalid.map((el) => LABELS[el.name] || el.name))];
+      say(`Zkontrolujte prosím: ${names.join(', ')}.`, 'err');
       return;
     }
     const btn = form.querySelector<HTMLButtonElement>('button[type=submit]');
@@ -180,6 +203,15 @@ import { site } from '../data/site';
   .field input:focus + label, .field input:not(:placeholder-shown) + label,
   .field textarea:focus + label, .field textarea:not(:placeholder-shown) + label { transform: translateY(-1.35rem) scale(0.8); color: var(--c-lime); }
   .field.is-invalid input, .field.is-invalid textarea { border-bottom-color: #ff9c9c; }
+  /* automatické vyplňování prohlížeče: zachovat tmavé pozadí a bílý text, label nahoře */
+  .field input:-webkit-autofill, .field input:-webkit-autofill:hover, .field input:-webkit-autofill:focus,
+  .field textarea:-webkit-autofill {
+    -webkit-text-fill-color: #fff; caret-color: #fff;
+    -webkit-box-shadow: 0 0 0 100px #16241e inset; box-shadow: 0 0 0 100px #16241e inset;
+    transition: background-color 99999s ease-out 0s;
+  }
+  .field input:autofill { background: transparent; }
+  .field input:-webkit-autofill + label { transform: translateY(-1.35rem) scale(0.8); color: var(--c-lime); }
   .field.is-invalid label { color: #ffb4b4; }
 
   .hp { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }

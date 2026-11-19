@@ -19,7 +19,7 @@ const RATE_MAX = 5;
 const hits = new Map<string, number[]>(); // best-effort, per serverless instance
 
 const EMAIL_RE = /^[^\s@<>()[\]\\,;:"]{1,64}@[^\s@<>()[\]\\,;:"]{1,190}\.[a-z]{2,24}$/i;
-const PHONE_RE = /^[0-9+()\s-]{6,40}$/;
+const PHONE_RE = /^[0-9+()\s\-./]{6,40}$/;
 
 type Fields = { company: string; name: string; phone: string; email: string; message: string; consent: string; website: string; ts: string };
 
@@ -29,9 +29,12 @@ const json = (status: number, body: Record<string, unknown>) =>
     headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' },
   });
 
+const INVISIBLE = /[\u200B-\u200F\u202A-\u202E\u2060-\u2064\uFEFF\u00AD]/g;
 const clean = (v: unknown, max: number) =>
   String(v ?? '')
     .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '')
+    .replace(INVISIBLE, '')
+    .replace(/\u00A0/g, ' ')
     .trim()
     .slice(0, max);
 
