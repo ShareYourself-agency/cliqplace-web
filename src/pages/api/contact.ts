@@ -125,7 +125,7 @@ export const POST: APIRoute = async ({ request, clientAddress, url }) => {
     if (isForm && !wantsJson) {
       // no-JS fallback → back to the contact page
       const target = new URL('/kontakt', url);
-      if (status < 300) target.searchParams.set('odeslano', '1');
+      if (status < 300) return Response.redirect(new URL('/dekujeme', url).toString(), 303);
       else target.searchParams.set('chyba', '1');
       return Response.redirect(target.toString(), 303);
     }
@@ -170,7 +170,7 @@ export const POST: APIRoute = async ({ request, clientAddress, url }) => {
   if (f.name.length < 2) errors.push('jméno');
   if (!EMAIL_RE.test(f.email)) errors.push('e-mail');
   if (f.phone && !PHONE_RE.test(f.phone)) errors.push('telefon');
-  if (f.message.length < 10) errors.push('popis');
+  if (f.message.length < 5) errors.push('popis');
   if (f.consent !== '1' && f.consent !== 'on' && f.consent !== 'true') errors.push('souhlas se zpracováním údajů');
   if (errors.length) return respond(422, { error: `Zkontrolujte prosím: ${errors.join(', ')}.` });
 

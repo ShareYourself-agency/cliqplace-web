@@ -1,0 +1,53 @@
+---
+import Base from '../layouts/Base.astro';
+/* Děkovací stránka po odeslání poptávky – unikátní URL /dekujeme pro měření konverzí.
+   Konverze (Google Ads, Meta Lead, dataLayer generate_lead) se spustí jen po skutečném odeslání formuláře
+   (sessionStorage „cq_lead“), ne při pouhé návštěvě nebo obnovení stránky. */
+---
+<Base title="Děkujeme za poptávku" description="Vaše poptávka dorazila. Ozveme se vám co nejdříve." noindex>
+  <section class="dark-shell ty">
+    <div class="container ty__inner">
+      <div class="ty__badge" aria-hidden="true">
+        <svg viewBox="0 0 48 48" width="40" height="40"><path d="M14 25l7 7 14-15" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" class="ty__check" /></svg>
+      </div>
+      <h1 class="h1">Děkujeme, poptávka <span class="text-lime">je u nás.</span></h1>
+      <p class="lead">Ozveme se vám co nejdříve a domluvíme, jak vám s ticketingem pomoci. Pokud to spěchá, zavolejte nám na <a href="tel:+420772000020">+420 772 000 020</a>.</p>
+      <div class="btn-row">
+        <a class="btn" href="/">Zpět na úvod</a>
+        <a class="btn btn--ghost" href="/software">Prohlédnout software</a>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<script>
+  import { trackLead } from '../scripts/consent';
+  let id: string | null = null;
+  try {
+    id = sessionStorage.getItem('cq_lead');
+    sessionStorage.removeItem('cq_lead');
+  } catch {}
+  if (id) {
+    const fire = () => { try { trackLead(id!); } catch {} };
+    // počkáme, až se načte gtag / případně Meta Pixel
+    if (document.readyState === 'complete') setTimeout(fire, 300);
+    else addEventListener('load', () => setTimeout(fire, 300), { once: true });
+  }
+</script>
+
+<style>
+  .ty { min-height: 100svh; display: grid; align-items: center; padding-block: calc(var(--header-h) + 3rem) 4rem; }
+  .ty__inner { display: grid; justify-items: center; text-align: center; gap: 1.4rem; }
+  .ty__badge {
+    width: 5.5rem; height: 5.5rem; border-radius: 50%; display: grid; place-items: center; color: #0d1513;
+    background: var(--c-lime); box-shadow: 0 0 0 10px rgba(199, 255, 156, 0.12), 0 0 60px rgba(93, 255, 74, 0.45);
+    animation: ty-pop 0.6s cubic-bezier(.2, 1.4, .4, 1) both;
+  }
+  .ty__check { stroke-dasharray: 40; stroke-dashoffset: 40; animation: ty-draw 0.6s 0.35s ease-out forwards; }
+  @keyframes ty-pop { from { transform: scale(0.4); opacity: 0; } }
+  @keyframes ty-draw { to { stroke-dashoffset: 0; } }
+  .ty .h1 { max-width: 18ch; }
+  .ty .lead { color: rgba(255, 255, 255, 0.85); max-width: 44ch; }
+  .ty .lead a { color: var(--c-lime); white-space: nowrap; }
+  @media (prefers-reduced-motion: reduce) { .ty__badge, .ty__check { animation: none; stroke-dashoffset: 0; } }
+</style>

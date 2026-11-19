@@ -7,7 +7,7 @@ export default defineConfig({
   site: 'https://www.cliqplace.cz',
   output: 'static',
   adapter: vercel(),
-  integrations: [sitemap({ filter: (p) => !p.includes('/admin') })],
+  integrations: [sitemap({ filter: (p) => !p.includes('/admin') && !p.includes('/dekujeme') })],
   trailingSlash: 'never',
   build: { format: 'file', inlineStylesheets: 'auto' },
   image: { responsiveStyles: false },

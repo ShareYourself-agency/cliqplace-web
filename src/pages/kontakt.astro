@@ -40,7 +40,7 @@ import { site } from '../data/site';
               <label for="f-email">Email <span aria-hidden="true">*</span></label>
             </div>
             <div class="field field--full">
-              <textarea id="f-message" name="message" rows="4" required minlength="10" maxlength="4000" placeholder=" "></textarea>
+              <textarea id="f-message" name="message" rows="4" required minlength="5" maxlength="4000" placeholder=" "></textarea>
               <label for="f-message">Popište pro co hledáte řešení. <span aria-hidden="true">*</span></label>
             </div>
           </div>
@@ -73,7 +73,7 @@ import { site } from '../data/site';
 </Base>
 
 <script>
-  import { getConsent, metaCookies, trackLead } from '../scripts/consent';
+  import { getConsent, metaCookies } from '../scripts/consent';
   const form = document.querySelector<HTMLFormElement>('[data-contact-form]');
   const status = document.querySelector<HTMLElement>('[data-form-status]');
   const ts = form?.querySelector<HTMLInputElement>('[data-ts]');
@@ -99,7 +99,7 @@ import { site } from '../data/site';
       if (v !== el.value) el.value = v;
     });
   };
-  const LABELS: Record<string, string> = { name: 'jméno', email: 'e-mail', phone: 'telefon', message: 'popis', consent: 'souhlas se zpracováním údajů' };
+  const LABELS: Record<string, string> = { name: 'jméno', email: 'e-mail (ve tvaru jmeno@firma.cz)', phone: 'telefon', message: 'popis (alespoň 5 znaků)', consent: 'souhlas se zpracováním údajů' };
   // po opravě pole hned zmizí červené označení
   form?.addEventListener('input', (e) => {
     const el = e.target as HTMLInputElement;
@@ -135,10 +135,10 @@ import { site } from '../data/site';
       });
       const json = await res.json().catch(() => ({}));
       if (res.ok) {
+        try { sessionStorage.setItem('cq_lead', eventId); } catch {}
         form.reset();
-        if (ts) ts.value = String(Date.now());
-        say('Děkujeme, zpráva byla odeslána. Ozveme se vám co nejdříve.', 'ok');
-        try { trackLead(eventId); } catch {}
+        say('Děkujeme, zpráva byla odeslána.', 'ok');
+        location.assign('/dekujeme');
       } else {
         say(json.error || 'Zprávu se nepodařilo odeslat. Napište nám prosím na info@cliqplace.cz.', 'err');
       }
@@ -212,7 +212,8 @@ import { site } from '../data/site';
   }
   .field input:autofill { background: transparent; }
   .field input:-webkit-autofill + label { transform: translateY(-1.35rem) scale(0.8); color: var(--c-lime); }
-  .field.is-invalid label { color: #ffb4b4; }
+  .field.is-invalid label { color: #ffb4b4 !important; }
+  .field.is-invalid::after { transform: scaleX(1); background: #ff8a8a; box-shadow: 0 0 10px rgba(255,120,120,0.55); }
 
   .hp { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
 
